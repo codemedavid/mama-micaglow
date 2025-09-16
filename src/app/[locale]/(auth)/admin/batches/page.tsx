@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -563,15 +564,27 @@ export default function AdminBatchesPage() {
                                 addProductFromList(product);
                               }
                             }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                if (!isAlreadyAdded) {
+                                  addProductFromList(product);
+                                }
+                              }
+                            }}
+                            role="button"
+                            tabIndex={0}
                           >
                             {/* Product Image */}
                             <div className="relative flex-shrink-0">
                               {product.image_url
                                 ? (
-                                    <img
+                                    <Image
                                       src={product.image_url}
                                       alt={product.name}
                                       className="h-14 w-14 rounded-xl object-cover shadow-sm"
+                                      width={56}
+                                      height={56}
                                     />
                                   )
                                 : (
@@ -683,7 +696,7 @@ export default function AdminBatchesPage() {
                             formData.products.map((product, index) => {
                               const selectedProduct = products.find(p => p.id === product.product_id);
                               return (
-                                <div key={index} className="rounded-xl border border-gray-200 bg-gray-50 p-6">
+                                <div key={`product-${product.product_id}-${product.target_vials}`} className="rounded-xl border border-gray-200 bg-gray-50 p-6">
                                   <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                                     <div className="space-y-2">
                                       <Label className="flex items-center text-sm font-medium text-gray-700">
@@ -709,7 +722,7 @@ export default function AdminBatchesPage() {
                                               <div className="flex items-center space-x-3">
                                                 {p.image_url
                                                   ? (
-                                                      <img src={p.image_url} alt={p.name} className="h-8 w-8 rounded-lg object-cover" />
+                                                      <Image src={p.image_url} alt={p.name} className="h-8 w-8 rounded-lg object-cover" width={32} height={32} />
                                                     )
                                                   : (
                                                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-sm font-bold text-white">

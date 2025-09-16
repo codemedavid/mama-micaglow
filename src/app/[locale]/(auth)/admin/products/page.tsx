@@ -8,6 +8,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +81,39 @@ export default function AdminProductsPage() {
     specifications: '',
   });
 
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        // Handle error if needed
+      } else {
+        setProducts(data || []);
+      }
+    } catch {
+      // Handle error if needed
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData(prev => ({
+      ...prev,
+      name: '',
+      description: '',
+      category: '',
+      price_per_vial: '',
+      price_per_box: '',
+      vials_per_box: '10',
+      image_url: '',
+      specifications: '',
+    }));
+  };
+
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
       router.push('/dashboard');
@@ -90,23 +124,6 @@ export default function AdminProductsPage() {
       fetchProducts();
     }
   }, [isAdmin, roleLoading, router]);
-
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-      } else {
-        setProducts(data || []);
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +165,8 @@ export default function AdminProductsPage() {
       setEditingProduct(null);
       resetForm();
       fetchProducts();
-    } catch (error) {
+    } catch {
+      // Handle error if needed
     }
   };
 
@@ -178,23 +196,9 @@ export default function AdminProductsPage() {
       } else {
         fetchProducts();
       }
-    } catch (error) {
+    } catch {
       // Handle error if needed
     }
-  };
-
-  const resetForm = () => {
-    setFormData(prev => ({
-      ...prev,
-      name: '',
-      description: '',
-      category: '',
-      price_per_vial: '',
-      price_per_box: '',
-      vials_per_box: '10',
-      image_url: '',
-      specifications: '',
-    }));
   };
 
   const handleDialogClose = () => {
@@ -376,9 +380,11 @@ export default function AdminProductsPage() {
                       {product.image_url
                         ? (
                             <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl">
-                              <img
+                              <Image
                                 src={product.image_url}
                                 alt={product.name}
+                                width={48}
+                                height={48}
                                 className="h-full w-full object-cover"
                               />
                             </div>
@@ -421,9 +427,11 @@ export default function AdminProductsPage() {
                   {/* Product Image Preview */}
                   {product.image_url && (
                     <div className="h-32 w-full overflow-hidden rounded-lg bg-gray-100">
-                      <img
+                      <Image
                         src={product.image_url}
                         alt={product.name}
+                        width={128}
+                        height={128}
                         className="h-full w-full object-cover"
                       />
                     </div>

@@ -29,12 +29,14 @@ const Alert = ({ ref, className, variant, ...props }: React.HTMLAttributes<HTMLD
 );
 Alert.displayName = 'Alert';
 
-const AlertTitle = ({ ref, className, ...props }: React.HTMLAttributes<HTMLHeadingElement> & { ref?: React.RefObject<HTMLParagraphElement | null> }) => (
+const AlertTitle = ({ ref, className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement> & { ref?: React.RefObject<HTMLParagraphElement | null> }) => (
   <h5
     ref={ref}
     className={cn('mb-1 font-medium leading-none tracking-tight', className)}
     {...props}
-  />
+  >
+    {children}
+  </h5>
 );
 AlertTitle.displayName = 'AlertTitle';
 

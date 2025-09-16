@@ -139,150 +139,152 @@ export function Cart() {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {state.items.length === 0 ? (
-            <div className="py-8 text-center">
-              <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">Your cart is empty</p>
-              <Button asChild className="mt-4">
-                <Link href="/products">Browse Products</Link>
-              </Button>
-            </div>
-          ) : (
-            <>
-              {/* Cart Items by Type */}
-              {Object.entries(groupedItems).map(([type, items]) => (
-                <div key={type} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    {getTypeIcon(type)}
-                    <h3 className="font-semibold">{getTypeLabel(type)}</h3>
-                    <Badge className={getTypeColor(type)}>
-                      {items.length}
-                      {' '}
-                      item
-                      {items.length !== 1
-                        ? 's'
-                        : ''}
-                    </Badge>
-                  </div>
+          {state.items.length === 0
+            ? (
+                <div className="py-8 text-center">
+                  <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">Your cart is empty</p>
+                  <Button asChild className="mt-4">
+                    <Link href="/products">Browse Products</Link>
+                  </Button>
+                </div>
+              )
+            : (
+                <>
+                  {/* Cart Items by Type */}
+                  {Object.entries(groupedItems).map(([type, items]) => (
+                    <div key={type} className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        {getTypeIcon(type)}
+                        <h3 className="font-semibold">{getTypeLabel(type)}</h3>
+                        <Badge className={getTypeColor(type)}>
+                          {items.length}
+                          {' '}
+                          item
+                          {items.length !== 1
+                            ? 's'
+                            : ''}
+                        </Badge>
+                      </div>
 
-                  <div className="space-y-3">
-                    {items.map(item => (
-                      <Card key={`${item.id}-${item.type}`} className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-md bg-muted">
-                            {getTypeIcon(item.type)}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <h4 className="truncate text-sm font-medium">{item.name}</h4>
-                            <p className="text-xs text-muted-foreground">
-                              {item.type === 'individual'
-                                ? `₱${item.price.toLocaleString()} per box`
-                                : `₱${item.price.toLocaleString()} per vial`}
-                            </p>
-                            {item.type === 'group-buy' && item.maxQuantity && (
-                              <p className="text-xs font-medium text-orange-600">
-                                Max:
-                                {' '}
-                                {item.maxQuantity}
-                                {' '}
-                                vials remaining
-                              </p>
-                            )}
-
-                            <div className="mt-2 flex items-center gap-2">
-                              <div className="flex items-center rounded-md border">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <Input
-                                  value={item.quantity}
-                                  onChange={e => handleQuantityChange(item.id, Number.parseInt(e.target.value) || 0)}
-                                  className="h-8 w-12 border-0 text-center"
-                                  min="0"
-                                  max={item.type === 'group-buy' && item.maxQuantity
-                                    ? item.maxQuantity
-                                    : undefined}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                  disabled={item.type === 'group-buy' && item.maxQuantity ? item.quantity >= (item.maxQuantity as number) : false}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
+                      <div className="space-y-3">
+                        {items.map(item => (
+                          <Card key={`${item.id}-${item.type}`} className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-16 w-16 items-center justify-center rounded-md bg-muted">
+                                {getTypeIcon(item.type)}
                               </div>
 
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive"
-                                onClick={() => handleRemoveItem(item.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="truncate text-sm font-medium">{item.name}</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.type === 'individual'
+                                    ? `₱${item.price.toLocaleString()} per box`
+                                    : `₱${item.price.toLocaleString()} per vial`}
+                                </p>
+                                {item.type === 'group-buy' && item.maxQuantity && (
+                                  <p className="text-xs font-medium text-orange-600">
+                                    Max:
+                                    {' '}
+                                    {item.maxQuantity}
+                                    {' '}
+                                    vials remaining
+                                  </p>
+                                )}
+
+                                <div className="mt-2 flex items-center gap-2">
+                                  <div className="flex items-center rounded-md border">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <Input
+                                      value={item.quantity}
+                                      onChange={e => handleQuantityChange(item.id, Number.parseInt(e.target.value) || 0)}
+                                      className="h-8 w-12 border-0 text-center"
+                                      min="0"
+                                      max={item.type === 'group-buy' && item.maxQuantity
+                                        ? item.maxQuantity
+                                        : undefined}
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                      disabled={item.type === 'group-buy' && item.maxQuantity ? item.quantity >= (item.maxQuantity as number) : false}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-destructive"
+                                    onClick={() => handleRemoveItem(item.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <p className="text-sm font-semibold">
+                                  ₱
+                                  {(item.price * item.quantity).toLocaleString()}
+                                </p>
+                              </div>
                             </div>
-                          </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
 
-                          <div className="text-right">
-                            <p className="text-sm font-semibold">
-                              ₱
-                              {(item.price * item.quantity).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                  {/* Cart Summary */}
+                  <Card className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Total Items:</span>
+                        <span>{state.itemCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Total Amount:</span>
+                        <span className="text-lg font-bold text-primary">
+                          ₱
+                          {state.total.toLocaleString()}
+                        </span>
+                      </div>
 
-              {/* Cart Summary */}
-              <Card className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Total Items:</span>
-                    <span>{state.itemCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Total Amount:</span>
-                    <span className="text-lg font-bold text-primary">
-                      ₱
-                      {state.total.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 pt-4">
-                    {hasGroupBuyItems()
-                      ? (
-                          <Button className="w-full" onClick={openGroupBuyCheckout}>
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            Checkout Group Buy Items
-                          </Button>
-                        )
-                      : (
-                          <Button className="w-full" asChild>
-                            <Link href="/checkout">
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Proceed to Checkout
-                            </Link>
-                          </Button>
-                        )}
-                    <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
-                      Continue Shopping
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </>
-          )}
+                      <div className="space-y-2 pt-4">
+                        {hasGroupBuyItems()
+                          ? (
+                              <Button className="w-full" onClick={openGroupBuyCheckout}>
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Checkout Group Buy Items
+                              </Button>
+                            )
+                          : (
+                              <Button className="w-full" asChild>
+                                <Link href="/checkout">
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  Proceed to Checkout
+                                </Link>
+                              </Button>
+                            )}
+                        <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+                          Continue Shopping
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </>
+              )}
         </div>
         {hasGroupBuyItems() && (
           <GroupBuyCheckout

@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -58,14 +59,10 @@ export default function GroupBuyClient() {
   const [productQuantities, setProductQuantities] = useState<Record<number, number>>({});
   const { dispatch } = useCart();
 
-  useEffect(() => {
-    fetchActiveBatch();
-  }, []);
-
   const fetchActiveBatch = async () => {
     try {
       // First, test basic connection
-      const { data: testData, error: testError } = await supabase
+      const { data: _testData, error: testError } = await supabase
         .from('group_buy_batches')
         .select('id, name, status')
         .limit(1);
@@ -91,7 +88,6 @@ export default function GroupBuyClient() {
         .single();
 
       if (error) {
-
         // Check if it's a "no rows" error (which is expected if no active batch exists)
         if (error.code === 'PGRST116') {
           setActiveBatch(null);
@@ -115,7 +111,6 @@ export default function GroupBuyClient() {
         return;
       }
 
-
       // Fetch products separately if we have batch products
       if (data && data.group_buy_products && data.group_buy_products.length > 0) {
         const productIds = data.group_buy_products.map((bp: BatchProduct) => bp.product_id) as number[];
@@ -126,10 +121,9 @@ export default function GroupBuyClient() {
           .in('id', productIds as number[]);
 
         if (productsError) {
-    
+
           // Continue with batch data even if products fail
         } else {
-
           // Combine batch products with product data
           const enrichedBatchProducts = data.group_buy_products.map((bp: BatchProduct) => ({
             ...bp,
@@ -148,12 +142,16 @@ export default function GroupBuyClient() {
         initialQuantities[bp.product_id] = 0;
       });
       setProductQuantities(initialQuantities);
-    } catch (error) {
+    } catch {
       setActiveBatch(null);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchActiveBatch();
+  }, []);
 
   const getProgressPercentage = (batch: Batch) => {
     if (batch.target_vials === 0) {
@@ -225,7 +223,6 @@ export default function GroupBuyClient() {
       ...prev,
       [batchProduct.product_id]: 0,
     }));
-
   };
 
   const getTotalItems = () => {
@@ -366,159 +363,163 @@ export default function GroupBuyClient() {
       </Card>
 
       {/* Products Section */}
-      {activeBatch && activeBatch.group_buy_products && activeBatch.group_buy_products.length > 0 ? (
-        <div className="space-y-6">
-          <h2 className="mb-6 text-center text-2xl font-bold">Available Products</h2>
+      {activeBatch && activeBatch.group_buy_products && activeBatch.group_buy_products.length > 0
+        ? (
+            <div className="space-y-6">
+              <h2 className="mb-6 text-center text-2xl font-bold">Available Products</h2>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {activeBatch.group_buy_products.map((batchProduct) => {
-              const product = batchProduct.product;
-              const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
-              const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials);
-              const status = getVialStatus(remaining);
-              const quantity = productQuantities[batchProduct.product_id] || 0;
-              const price = product?.price_per_vial || 0;
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {activeBatch.group_buy_products.map((batchProduct) => {
+                  const product = batchProduct.product;
+                  const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
+                  const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials);
+                  const status = getVialStatus(remaining);
+                  const quantity = productQuantities[batchProduct.product_id] || 0;
+                  const price = product?.price_per_vial || 0;
 
-              return (
-                <Card key={batchProduct.product_id} className="group transition-shadow hover:shadow-lg">
-                  <CardHeader>
-                    <div className="mb-3 flex items-center space-x-3">
-                      {product?.image_url
-                        ? (
-                            <img
-                              src={product.image_url}
-                              alt={product.name || 'Product'}
-                              className="h-12 w-12 rounded-lg object-cover"
+                  return (
+                    <Card key={batchProduct.product_id} className="group transition-shadow hover:shadow-lg">
+                      <CardHeader>
+                        <div className="mb-3 flex items-center space-x-3">
+                          {product?.image_url
+                            ? (
+                                <Image
+                                  src={product.image_url}
+                                  alt={product.name || 'Product'}
+                                  width={48}
+                                  height={48}
+                                  className="h-12 w-12 rounded-lg object-cover"
+                                />
+                              )
+                            : (
+                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 font-bold text-white">
+                                  {(product?.name || 'P').charAt(0)}
+                                </div>
+                              )}
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">{product?.name || 'Unknown Product'}</CardTitle>
+                            <CardDescription className="text-sm">{product?.category || 'Unknown Category'}</CardDescription>
+                          </div>
+                          <Badge className={status.color}>{status.text}</Badge>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4">
+                        {/* Product Details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Price per vial:</span>
+                            <span className="font-bold text-green-600">
+                              ₱
+                              {price}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Progress:</span>
+                            <span className="text-sm font-medium">
+                              {batchProduct.current_vials}
+                              /
+                              {batchProduct.target_vials}
+                              {' '}
+                              vials
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-gray-200">
+                            <div
+                              className="h-2 rounded-full bg-green-600 transition-all duration-300"
+                              style={{ width: `${productProgress}%` }}
                             />
-                          )
-                        : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 font-bold text-white">
-                              {(product?.name || 'P').charAt(0)}
+                          </div>
+                        </div>
+
+                        {/* Quantity Selector */}
+                        <div className="space-y-2">
+                          <Label htmlFor={`quantity-${batchProduct.product_id}`}>Quantity (vials)</Label>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => updateQuantity(batchProduct.product_id, quantity - 1)}
+                              disabled={quantity <= 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Input
+                              id={`quantity-${batchProduct.product_id}`}
+                              type="number"
+                              min="0"
+                              max={remaining}
+                              value={quantity}
+                              onChange={e => updateQuantity(batchProduct.product_id, Number.parseInt(e.target.value) || 0)}
+                              className="w-20 text-center"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => updateQuantity(batchProduct.product_id, quantity + 1)}
+                              disabled={quantity >= remaining}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          {quantity > 0 && (
+                            <div className="text-sm text-muted-foreground">
+                              Total: ₱
+                              {(quantity * price).toLocaleString()}
                             </div>
                           )}
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{product?.name || 'Unknown Product'}</CardTitle>
-                        <CardDescription className="text-sm">{product?.category || 'Unknown Category'}</CardDescription>
-                      </div>
-                      <Badge className={status.color}>{status.text}</Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    {/* Product Details */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Price per vial:</span>
-                        <span className="font-bold text-green-600">
-                          ₱
-                          {price}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Progress:</span>
-                        <span className="text-sm font-medium">
-                          {batchProduct.current_vials}
-                          /
-                          {batchProduct.target_vials}
-                          {' '}
-                          vials
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-gray-200">
-                        <div
-                          className="h-2 rounded-full bg-green-600 transition-all duration-300"
-                          style={{ width: `${productProgress}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quantity Selector */}
-                    <div className="space-y-2">
-                      <Label htmlFor={`quantity-${batchProduct.product_id}`}>Quantity (vials)</Label>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => updateQuantity(batchProduct.product_id, quantity - 1)}
-                          disabled={quantity <= 0}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          id={`quantity-${batchProduct.product_id}`}
-                          type="number"
-                          min="0"
-                          max={remaining}
-                          value={quantity}
-                          onChange={e => updateQuantity(batchProduct.product_id, Number.parseInt(e.target.value) || 0)}
-                          className="w-20 text-center"
-                        />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => updateQuantity(batchProduct.product_id, quantity + 1)}
-                          disabled={quantity >= remaining}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {quantity > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          Total: ₱
-                          {(quantity * price).toLocaleString()}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Add to Cart Button */}
-                    <Button
-                      className="w-full"
-                      onClick={() => addToCart(batchProduct)}
-                      disabled={quantity <= 0 || remaining === 0}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      {remaining === 0 ? 'Sold Out' : `Add ${quantity} vial(s) to Cart`}
-                    </Button>
+                        {/* Add to Cart Button */}
+                        <Button
+                          className="w-full"
+                          onClick={() => addToCart(batchProduct)}
+                          disabled={quantity <= 0 || remaining === 0}
+                        >
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          {remaining === 0 ? 'Sold Out' : `Add ${quantity} vial(s) to Cart`}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Cart Summary */}
+              {totalItems > 0 && (
+                <Card className="mt-8 border-purple-200 bg-purple-50">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold">Cart Summary</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {totalItems}
+                          {' '}
+                          vial(s) selected • Total: ₱
+                          {totalPrice.toLocaleString()}
+                        </p>
+                      </div>
+                      <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        View Cart (
+                        {totalItems}
+                        )
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
-              );
-            })}
-          </div>
-
-          {/* Cart Summary */}
-          {totalItems > 0 && (
-            <Card className="mt-8 border-purple-200 bg-purple-50">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Cart Summary</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {totalItems}
-                      {' '}
-                      vial(s) selected • Total: ₱
-                      {totalPrice.toLocaleString()}
-                    </p>
-                  </div>
-                  <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    View Cart (
-                    {totalItems}
-                    )
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
+          )
+        : (
+            <div className="py-12 text-center">
+              <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+              <h3 className="mb-2 text-xl font-semibold">No Products Available</h3>
+              <p className="text-muted-foreground">
+                This batch doesn't have any products yet.
+              </p>
+            </div>
           )}
-        </div>
-      ) : (
-        <div className="py-12 text-center">
-          <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-          <h3 className="mb-2 text-xl font-semibold">No Products Available</h3>
-          <p className="text-muted-foreground">
-            This batch doesn't have any products yet.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

@@ -9,8 +9,9 @@ import {
   Plus as PlusIcon,
   ShoppingCart,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,11 +72,7 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
 
   const resolvedParams = use(params);
 
-  useEffect(() => {
-    fetchBatch();
-  }, [resolvedParams.batchId]);
-
-  const fetchBatch = async () => {
+  const fetchBatch = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('group_buy_batches')
@@ -104,7 +101,7 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolvedParams.batchId, router]);
 
   const updateVialOrder = (productId: number, vials: number) => {
     if (vials < 0) {
@@ -125,6 +122,10 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
   const getTotalVials = () => {
     return Object.values(vialOrders).reduce((sum, vials) => sum + vials, 0);
   };
+
+  useEffect(() => {
+    fetchBatch();
+  }, [resolvedParams.batchId, fetchBatch]);
 
   const getTotalPrice = () => {
     return Object.entries(vialOrders).reduce((sum, [productId, vials]) => {
@@ -301,9 +302,11 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
                     {batchProduct.product.image_url
                       ? (
                           <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
-                            <img
+                            <Image
                               src={batchProduct.product.image_url}
                               alt={batchProduct.product.name}
+                              width={64}
+                              height={64}
                               className="h-full w-full object-cover"
                             />
                           </div>

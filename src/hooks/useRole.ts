@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export type UserRole = 'admin' | 'host' | 'customer';
@@ -23,51 +23,7 @@ export function useRole() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
-
-    if (!isSignedIn || !user) {
-      setUserProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    const fetchUserProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('clerk_id', user.id)
-          .single();
-
-        if (error) {
-          // If user profile doesn't exist, create one
-          if (error.code === 'PGRST116') {
-            const newProfile = await createUserProfile('customer');
-            if (newProfile) {
-              setUserProfile(newProfile);
-            } else {
-              setUserProfile(null);
-            }
-          } else {
-            setUserProfile(null);
-          }
-        } else {
-          setUserProfile(data);
-        }
-      } catch (error) {
-        setUserProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user, isSignedIn, isLoaded]);
-
-  const createUserProfile = async (role: UserRole = 'customer') => {
+  const createUserProfile = useCallback(async (role: UserRole = 'customer') => {
     if (!user) {
       return null;
     }
@@ -104,10 +60,57 @@ export function useRole() {
 
       setUserProfile(data);
       return data;
-    } catch (error) {
+    } catch {
       return null;
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!isSignedIn || !user) {
+      const resetState = () => {
+        setUserProfile(null);
+        setLoading(false);
+      };
+      resetState();
+      return;
+    }
+
+    const fetchUserProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('clerk_id', user.id)
+          .single();
+
+        if (error) {
+          // If user profile doesn't exist, create one
+          if (error.code === 'PGRST116') {
+            const newProfile = await createUserProfile('customer');
+            if (newProfile) {
+              setUserProfile(newProfile);
+            } else {
+              setUserProfile(null);
+            }
+          } else {
+            setUserProfile(null);
+          }
+        } else {
+          setUserProfile(data);
+        }
+      } catch {
+        setUserProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user, isSignedIn, isLoaded, createUserProfile]);
 
   const updateUserRole = async (newRole: UserRole) => {
     if (!userProfile) {
@@ -126,7 +129,7 @@ export function useRole() {
 
       setUserProfile(prev => prev ? { ...prev, role: newRole } : null);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   };

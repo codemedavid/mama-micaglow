@@ -12,12 +12,12 @@ try {
       migrationsFolder: path.join(process.cwd(), 'migrations'),
     });
   }
-} catch (_error) {
+} catch {
   // Silently ignore database migration errors in development
 } finally {
   try {
     await db.$client.end();
-  } catch (_error) {
+  } catch {
     // Silently ignore connection close errors
   }
 }

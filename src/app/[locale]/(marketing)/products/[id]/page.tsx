@@ -138,7 +138,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <div className="flex items-center">
                   {[...Array.from({ length: 5 })].map((_, i) => (
                     <Star
-                      key={i}
+                      key={`star-${product.id}-${i}`}
                       className={`h-5 w-5 ${
                         i < Math.floor(product.rating)
                           ? 'fill-current text-yellow-400'

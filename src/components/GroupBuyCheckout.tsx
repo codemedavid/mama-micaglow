@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   User,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -77,13 +77,17 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
   //   : (sourceItems as OrderItem[]).reduce((sum: number, item: OrderItem) => sum + (item.price * item.quantity), 0);
 
   // Snapshot current items for this batch when dialog opens, clear on close
-  useEffect(() => {
+  const updateCheckoutItems = useCallback(() => {
     if (isOpen) {
       setCheckoutItems(sourceItems as OrderItem[]);
     } else {
       setCheckoutItems([]);
     }
-  }, [isOpen]);
+  }, [isOpen, sourceItems]);
+
+  useEffect(() => {
+    updateCheckoutItems();
+  }, [updateCheckoutItems]);
 
   // Small utility: wait then check order + items persisted
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -234,6 +238,7 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
         const expectedItems = itemsForCheckout.length;
         const persisted = await waitForPersistence(orderId, expectedItems);
         if (!persisted) {
+          // Handle persistence failure if needed
         }
         const orderSummaryLines = itemsForCheckout.map(item =>
           `• ${item.name}: ${item.quantity} vial(s) × ₱${item.price} = ₱${(item.price * item.quantity).toLocaleString()}`,

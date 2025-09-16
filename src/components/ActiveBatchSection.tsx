@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -50,10 +51,6 @@ type Batch = {
 export default function ActiveBatchSection() {
   const [activeBatch, setActiveBatch] = useState<Batch | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchActiveBatch();
-  }, []);
 
   const fetchActiveBatch = async () => {
     try {
@@ -125,6 +122,10 @@ export default function ActiveBatchSection() {
     }
     return { text: `${remaining} left`, color: 'bg-green-100 text-green-800' };
   };
+
+  useEffect(() => {
+    fetchActiveBatch();
+  }, []);
 
   if (loading) {
     return (
@@ -272,9 +273,11 @@ export default function ActiveBatchSection() {
                                 <div className="flex items-center space-x-3">
                                   {product.image_url
                                     ? (
-                                        <img
+                                        <Image
                                           src={product.image_url}
                                           alt={product.name}
+                                          width={40}
+                                          height={40}
                                           className="h-10 w-10 rounded-lg object-cover"
                                         />
                                       )

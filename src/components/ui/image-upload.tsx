@@ -1,6 +1,7 @@
 'use client';
 
 import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +18,15 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!file) {
@@ -39,21 +49,12 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
       // Convert file to base64 for now (in production, you'd upload to a service like Cloudinary, AWS S3, etc.)
       const base64 = await convertToBase64(file);
       onChange(base64);
-    } catch (error) {
+    } catch {
       // Handle error if needed
     } finally {
       setIsUploading(false);
     }
   }, [onChange]);
-
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -118,10 +119,12 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
               <Card className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="relative">
-                    <img
+                    <Image
                       src={value}
                       alt="Product preview"
                       className="h-48 w-full object-cover"
+                      width={192}
+                      height={192}
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                       <div className="flex space-x-2">

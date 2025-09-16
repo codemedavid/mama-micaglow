@@ -44,10 +44,6 @@ export default function AdminOverviewPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const fetchDashboardData = async () => {
     try {
       // Fetch products count
@@ -88,6 +84,10 @@ export default function AdminOverviewPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   if (loading) {
     return (
