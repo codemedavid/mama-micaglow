@@ -10,7 +10,7 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { useCart } from '@/contexts/CartContext';
+import { useCartActions } from '@/hooks/useCartActions';
+// import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/lib/supabase';
 
 type Product = {
@@ -54,23 +55,25 @@ type Batch = {
   batch_products: BatchProduct[];
 };
 
-type VialOrder = {
-  product_id: number;
-  vials: number;
-};
+// type VialOrder = {
+//   product_id: number;
+//   vials: number;
+// };
 
-export default function GroupBuyBatchPage({ params }: { params: { batchId: string } }) {
-  const { user, isSignedIn } = useUser();
-  const { addToCart } = useCart();
+export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchId: string }> }) {
+  const { isSignedIn } = useUser();
+  const { addToCart, updateQuantity } = useCartActions();
   const router = useRouter();
   const [batch, setBatch] = useState<Batch | null>(null);
   const [loading, setLoading] = useState(true);
   const [vialOrders, setVialOrders] = useState<Record<number, number>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
+
+  const resolvedParams = use(params);
 
   useEffect(() => {
     fetchBatch();
-  }, [params.batchId]);
+  }, [resolvedParams.batchId]);
 
   const fetchBatch = async () => {
     try {
@@ -86,19 +89,17 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
             product:products(*)
           )
         `)
-        .eq('id', params.batchId)
+        .eq('id', resolvedParams.batchId)
         .eq('status', 'active')
         .single();
 
       if (error) {
-        console.error('Error fetching batch:', error);
         router.push('/products/group-buy');
         return;
       }
 
       setBatch(data);
-    } catch (error) {
-      console.error('Error fetching batch:', error);
+    } catch {
       router.push('/products/group-buy');
     } finally {
       setLoading(false);
@@ -128,7 +129,7 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
   const getTotalPrice = () => {
     return Object.entries(vialOrders).reduce((sum, [productId, vials]) => {
       const product = batch?.batch_products.find(bp => bp.product_id === Number.parseInt(productId));
-      return sum + (product ? product.price_per_vial * vials : 0);
+      return sum + (product ? product.product.price_per_vial * vials : 0);
     }, 0);
   };
 
@@ -163,22 +164,23 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
       if (vials > 0) {
         const product = batch?.batch_products.find(bp => bp.product_id === Number.parseInt(productId));
         if (product) {
+          const itemId = `group-buy-${product.product_id}-${batch?.id?.toString() || ''}`;
           addToCart({
-            id: `group-buy-${product.product_id}-${batch?.id}`,
+            id: itemId,
             name: product.product.name,
-            price: product.price_per_vial,
-            quantity: vials,
+            price: product.product.price_per_vial,
             type: 'group-buy',
-            image: product.product.image_url,
-            batchId: batch?.id,
+            image: product.product.image_url || undefined,
+            batchId: batch?.id?.toString() || undefined,
             productId: product.product_id,
           });
+          // Update quantity to the desired number of vials
+          updateQuantity(itemId, vials);
         }
       }
     });
 
     setVialOrders({});
-    router.push('/cart');
   };
 
   if (loading) {
@@ -291,7 +293,7 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
 
         {/* Products Grid */}
         <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {batch.batch_products?.map(batchProduct => (
+          {batch.batch_products?.map((batchProduct: BatchProduct) => (
             <Card key={batchProduct.product_id} className="group border-0 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -321,7 +323,7 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
                   <div className="text-right">
                     <div className="text-2xl font-bold text-green-600">
                       ₱
-                      {batchProduct.price_per_vial}
+                      {batchProduct.product.price_per_vial}
                     </div>
                     <div className="text-sm text-gray-500">per vial</div>
                   </div>
@@ -366,7 +368,7 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] || 0) - 1)}
+                        onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] as number || 0) - 1)}
                         disabled={(vialOrders[batchProduct.product_id] || 0) <= 0}
                       >
                         <Minus className="h-4 w-4" />
@@ -375,14 +377,14 @@ export default function GroupBuyBatchPage({ params }: { params: { batchId: strin
                         type="number"
                         min="0"
                         max={batchProduct.target_vials - batchProduct.current_vials}
-                        value={vialOrders[batchProduct.product_id] || 0}
-                        onChange={e => updateVialOrder(batchProduct.product_id, Number.parseInt(e.target.value) || 0)}
+                        value={vialOrders[batchProduct.product_id] as number || 0}
+                        onChange={e => updateVialOrder(batchProduct.product_id, Number.parseInt(e.target.value as string) || 0)}
                         className="w-20 text-center"
                       />
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] || 0) + 1)}
+                        onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] as number || 0) + 1)}
                         disabled={(vialOrders[batchProduct.product_id] || 0) >= (batchProduct.target_vials - batchProduct.current_vials)}
                       >
                         <PlusIcon className="h-4 w-4" />

@@ -87,6 +87,13 @@ export function DashboardNav() {
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setIsOpen(false);
+            }
+          }}
+          role="button"
+          tabIndex={0}
         />
       )}
 

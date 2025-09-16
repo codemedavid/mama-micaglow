@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import GroupBuyCheckout from '@/components/GroupBuyCheckout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,102 +56,25 @@ export default function GroupBuyClient() {
   const [activeBatch, setActiveBatch] = useState<Batch | null>(null);
   const [loading, setLoading] = useState(true);
   const [productQuantities, setProductQuantities] = useState<Record<number, number>>({});
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { dispatch } = useCart();
 
   useEffect(() => {
     fetchActiveBatch();
   }, []);
 
-  // Realtime updates for batch and product progress
-  useEffect(() => {
-    if (!activeBatch?.id) {
-      return;
-    }
-
-    const channel = supabase.channel(`group-buy-realtime-${activeBatch.id}`, {
-      config: { broadcast: { ack: true }, presence: { key: `${activeBatch.id}` } },
-    });
-
-    channel.on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'group_buy_batches', filter: `id=eq.${activeBatch.id}` },
-      (payload) => {
-        const nextCurrent = (payload as any)?.new?.current_vials;
-        if (typeof nextCurrent === 'number') {
-          setActiveBatch(prev => (prev ? { ...prev, current_vials: nextCurrent } : prev));
-        }
-      },
-    );
-
-    channel.on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'group_buy_products', filter: `batch_id=eq.${activeBatch.id}` },
-      (payload) => {
-        const newRow = (payload as any)?.new;
-        const productId = newRow?.product_id;
-        const currentVials = newRow?.current_vials;
-        const targetVials = newRow?.target_vials;
-        if (typeof productId !== 'number') {
-          return;
-        }
-
-        setActiveBatch((prev) => {
-          if (!prev?.group_buy_products) {
-            return prev;
-          }
-          const updated = prev.group_buy_products.map(bp =>
-            bp.product_id === productId
-              ? {
-                  ...bp,
-                  current_vials: typeof currentVials === 'number' ? currentVials : bp.current_vials,
-                  target_vials: typeof targetVials === 'number' ? targetVials : bp.target_vials,
-                }
-              : bp,
-          );
-          return { ...prev, group_buy_products: updated };
-        });
-      },
-    );
-
-    channel.subscribe((status) => {
-      console.log('Realtime channel status:', status);
-    });
-
-    return () => {
-      try {
-        supabase.removeChannel(channel);
-      } catch {}
-    };
-  }, [activeBatch?.id]);
-
   const fetchActiveBatch = async () => {
     try {
-      console.log('Starting fetchActiveBatch...');
-
       // First, test basic connection
-      console.log('Testing Supabase connection...');
       const { data: testData, error: testError } = await supabase
         .from('group_buy_batches')
         .select('id, name, status')
         .limit(1);
 
       if (testError) {
-        console.error('Connection test failed:', testError);
-        console.error('Error details:', {
-          message: testError?.message || 'No message',
-          code: testError?.code || 'No code',
-          details: testError?.details || 'No details',
-          hint: testError?.hint || 'No hint',
-        });
-        console.error('Connection test error (stringified):', JSON.stringify(testError, null, 2));
         throw testError;
       }
 
-      console.log('Connection test successful:', testData);
-
       // Now try the full query
-      console.log('Fetching full batch data...');
       const { data, error } = await supabase
         .from('group_buy_batches')
         .select(`
@@ -169,24 +91,14 @@ export default function GroupBuyClient() {
         .single();
 
       if (error) {
-        console.error('Full query failed:', error);
-        console.error('Error details:', {
-          message: error?.message || 'No message',
-          code: error?.code || 'No code',
-          details: error?.details || 'No details',
-          hint: error?.hint || 'No hint',
-        });
-        console.error('Full error object (stringified):', JSON.stringify(error, null, 2));
 
         // Check if it's a "no rows" error (which is expected if no active batch exists)
         if (error.code === 'PGRST116') {
-          console.log('No active batch found - this is expected if no batch is active');
           setActiveBatch(null);
           return;
         }
 
         // For other errors, try a simpler query
-        console.log('Trying simpler query...');
         const { data: simpleData, error: simpleError } = await supabase
           .from('group_buy_batches')
           .select('*')
@@ -195,84 +107,35 @@ export default function GroupBuyClient() {
           .limit(1);
 
         if (simpleError) {
-          console.error('Simple query also failed:', simpleError);
-          console.error('Simple error details:', {
-            message: simpleError?.message || 'No message',
-            code: simpleError?.code || 'No code',
-            details: simpleError?.details || 'No details',
-            hint: simpleError?.hint || 'No hint',
-          });
-          console.error('Simple error object (stringified):', JSON.stringify(simpleError, null, 2));
           setActiveBatch(null);
           return;
         }
 
-        console.log('Simple query succeeded:', simpleData);
         setActiveBatch(simpleData as unknown as Batch);
         return;
       }
 
-      console.log('Full query succeeded:', data);
 
       // Fetch products separately if we have batch products
       if (data && data.group_buy_products && data.group_buy_products.length > 0) {
-        console.log('Fetching products for batch...');
-        console.log('Batch products (raw):', JSON.stringify(data.group_buy_products, null, 2));
-        const productIds = data.group_buy_products.map((bp: BatchProduct) => bp.product_id);
-        console.log('Product IDs to fetch:', productIds);
-        console.log('Product ID types:', productIds.map((id: number) => ({ id, type: typeof id })));
+        const productIds = data.group_buy_products.map((bp: BatchProduct) => bp.product_id) as number[];
 
         const { data: products, error: productsError } = await supabase
           .from('products')
           .select('*')
-          .in('id', productIds);
+          .in('id', productIds as number[]);
 
         if (productsError) {
-          console.error('Error fetching products:', productsError);
-          console.error('Products error details:', JSON.stringify(productsError, null, 2));
+    
+          // Continue with batch data even if products fail
         } else {
-          console.log('Products fetched successfully:', products);
-          console.log('Number of products found:', products?.length || 0);
-
-          if (!products || products.length === 0) {
-            console.log('No products found! Checking if products table has any data...');
-            // Check if products table has any data at all
-            const { data: allProducts, error: allProductsError } = await supabase
-              .from('products')
-              .select('*')
-              .limit(5);
-
-            if (allProductsError) {
-              console.error('Error fetching all products:', allProductsError);
-            } else {
-              console.log('All products in database:', allProducts);
-            }
-          }
 
           // Combine batch products with product data
-          const enrichedBatchProducts = data.group_buy_products.map((bp: BatchProduct) => {
-            console.log(`Looking for product with ID: ${bp.product_id} (type: ${typeof bp.product_id})`);
-            console.log(`Available products:`, products?.map(p => ({ id: p.id, name: p.name, type: typeof p.id })));
+          const enrichedBatchProducts = data.group_buy_products.map((bp: BatchProduct) => ({
+            ...bp,
+            product: products?.find(p => p.id === bp.product_id),
+          }));
 
-            const product = products?.find(p => p.id === bp.product_id);
-            console.log(`Found product for ID ${bp.product_id}:`, product);
-
-            // Try alternative matching methods
-            if (!product) {
-              console.log(`No exact match found. Trying alternative matching...`);
-              const altProduct1 = products?.find(p => p.id == bp.product_id); // Loose equality
-              const altProduct2 = products?.find(p => String(p.id) === String(bp.product_id)); // String comparison
-              console.log(`Loose equality match:`, altProduct1);
-              console.log(`String comparison match:`, altProduct2);
-            }
-
-            return {
-              ...bp,
-              product,
-            };
-          });
-
-          console.log('Enriched batch products:', enrichedBatchProducts);
           data.group_buy_products = enrichedBatchProducts;
         }
       }
@@ -286,10 +149,6 @@ export default function GroupBuyClient() {
       });
       setProductQuantities(initialQuantities);
     } catch (error) {
-      console.error('Error in fetchActiveBatch (catch block):', error);
-      console.error('Error type:', typeof error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Full error object:', error);
       setActiveBatch(null);
     } finally {
       setLoading(false);
@@ -336,34 +195,15 @@ export default function GroupBuyClient() {
   };
 
   const updateQuantity = (productId: number, quantity: number) => {
-    // Find the batch product to get remaining vials
-    const batchProduct = activeBatch?.group_buy_products?.find(bp => bp.product_id === productId);
-    if (batchProduct) {
-      const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
-      const clampedQuantity = Math.max(0, Math.min(quantity, remaining));
-      setProductQuantities(prev => ({
-        ...prev,
-        [productId]: clampedQuantity,
-      }));
-    } else {
-      setProductQuantities(prev => ({
-        ...prev,
-        [productId]: Math.max(0, quantity),
-      }));
-    }
+    setProductQuantities(prev => ({
+      ...prev,
+      [productId]: Math.max(0, quantity),
+    }));
   };
 
   const addToCart = (batchProduct: BatchProduct) => {
     const quantity = productQuantities[batchProduct.product_id] || 0;
     if (quantity <= 0) {
-      return;
-    }
-
-    const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
-
-    // Check if trying to add more than available
-    if (quantity > remaining) {
-      alert(`Cannot add ${quantity} vials. Only ${remaining} vials remaining for ${batchProduct.product?.name || 'this product'}.`);
       return;
     }
 
@@ -376,7 +216,6 @@ export default function GroupBuyClient() {
       image: batchProduct.product?.image_url || undefined,
       batchId: activeBatch?.id.toString() || '',
       productId: batchProduct.product_id,
-      maxQuantity: remaining,
     };
 
     dispatch({ type: 'ADD_ITEM', payload: cartItem });
@@ -387,7 +226,6 @@ export default function GroupBuyClient() {
       [batchProduct.product_id]: 0,
     }));
 
-    // Removed success alert to avoid intrusive popups on add to cart
   };
 
   const getTotalItems = () => {
@@ -400,7 +238,7 @@ export default function GroupBuyClient() {
     }
     return activeBatch.group_buy_products.reduce((total, bp) => {
       const quantity = productQuantities[bp.product_id] || 0;
-      const price = bp.price_per_vial || (bp.product?.price_per_vial || 0);
+      const price = bp.product?.price_per_vial || 0;
       return total + (quantity * price);
     }, 0);
   };
@@ -539,7 +377,7 @@ export default function GroupBuyClient() {
               const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials);
               const status = getVialStatus(remaining);
               const quantity = productQuantities[batchProduct.product_id] || 0;
-              const price = batchProduct.price_per_vial || product?.price_per_vial || 0;
+              const price = product?.price_per_vial || 0;
 
               return (
                 <Card key={batchProduct.product_id} className="group transition-shadow hover:shadow-lg">
@@ -661,26 +499,12 @@ export default function GroupBuyClient() {
                       {totalPrice.toLocaleString()}
                     </p>
                   </div>
-                  <div className="flex gap-3">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="border-purple-600 bg-white text-purple-600 hover:bg-purple-50"
-                    >
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      View Cart (
-                      {totalItems}
-                      )
-                    </Button>
-                    <Button
-                      size="lg"
-                      className="bg-purple-600 hover:bg-purple-700"
-                      onClick={() => setIsCheckoutOpen(true)}
-                    >
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      Proceed to Checkout
-                    </Button>
-                  </div>
+                  <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    View Cart (
+                    {totalItems}
+                    )
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -694,30 +518,6 @@ export default function GroupBuyClient() {
             This batch doesn't have any products yet.
           </p>
         </div>
-      )}
-
-      {/* Checkout Modal */}
-      {activeBatch && (
-        <GroupBuyCheckout
-          batchId={activeBatch.id}
-          batchName={activeBatch.name}
-          isOpen={isCheckoutOpen}
-          onClose={() => setIsCheckoutOpen(false)}
-          prefillItems={
-            activeBatch.group_buy_products
-              ?.map(bp => ({
-                id: `group-buy-${activeBatch.id}-${bp.product_id}`,
-                name: bp.product?.name || 'Unknown Product',
-                price: bp.price_per_vial || (bp.product?.price_per_vial || 0),
-                quantity: productQuantities[bp.product_id] || 0,
-                type: 'group-buy' as const,
-                batchId: String(activeBatch.id),
-                productId: bp.product_id,
-              }))
-              .filter(item => item.quantity > 0) || []
-          }
-          prefillTotal={getTotalPrice()}
-        />
       )}
     </div>
   );

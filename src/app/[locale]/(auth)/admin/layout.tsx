@@ -55,13 +55,11 @@ export default function AdminLayout({
           .limit(1);
 
         if (error) {
-          console.error('Error checking admin users:', error);
           setHasAdminUsers(false);
         } else {
           setHasAdminUsers(data && data.length > 0);
         }
-      } catch (error) {
-        console.error('Error checking admin users:', error);
+      } catch {
         setHasAdminUsers(false);
       }
     };
@@ -105,7 +103,17 @@ export default function AdminLayout({
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setSidebarOpen(false);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          />
           <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b p-4">
               <h2 className="text-lg font-semibold">Admin Panel</h2>

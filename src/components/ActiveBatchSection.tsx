@@ -76,13 +76,11 @@ export default function ActiveBatchSection() {
         .single();
 
       if (error) {
-        console.error('Error fetching active batch:', error);
         setActiveBatch(null);
       } else {
         setActiveBatch(data);
       }
-    } catch (error) {
-      console.error('Error fetching active batch:', error);
+    } catch {
       setActiveBatch(null);
     } finally {
       setLoading(false);
@@ -258,103 +256,105 @@ export default function ActiveBatchSection() {
             </CardHeader>
 
             <CardContent className="p-6">
-              {activeBatch.batch_products && activeBatch.batch_products.length > 0 ? (
-                <>
-                  <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {activeBatch.batch_products.map((batchProduct) => {
-                      const product = batchProduct.product;
-                      const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
-                      const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials);
-                      const status = getVialStatus(remaining);
+              {activeBatch.batch_products && activeBatch.batch_products.length > 0
+                ? (
+                    <>
+                      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {activeBatch.batch_products.map((batchProduct) => {
+                          const product = batchProduct.product;
+                          const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
+                          const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials);
+                          const status = getVialStatus(remaining);
 
-                      return (
-                        <div key={batchProduct.product_id} className="rounded-lg border border-green-200 bg-green-50/50 p-4">
-                          <div className="mb-3 flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              {product.image_url
-                                ? (
-                                    <img
-                                      src={product.image_url}
-                                      alt={product.name}
-                                      className="h-10 w-10 rounded-lg object-cover"
-                                    />
-                                  )
-                                : (
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-sm font-bold text-white">
-                                      {product.name.charAt(0)}
-                                    </div>
-                                  )}
-                              <div>
-                                <h3 className="text-lg font-semibold">{product.name}</h3>
-                                <p className="text-sm text-muted-foreground">{product.category}</p>
+                          return (
+                            <div key={batchProduct.product_id} className="rounded-lg border border-green-200 bg-green-50/50 p-4">
+                              <div className="mb-3 flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  {product.image_url
+                                    ? (
+                                        <img
+                                          src={product.image_url}
+                                          alt={product.name}
+                                          className="h-10 w-10 rounded-lg object-cover"
+                                        />
+                                      )
+                                    : (
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-sm font-bold text-white">
+                                          {product.name.charAt(0)}
+                                        </div>
+                                      )}
+                                  <div>
+                                    <h3 className="text-lg font-semibold">{product.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                                  </div>
+                                </div>
+                                <Badge className={status.color}>{status.text}</Badge>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm">Price per vial:</span>
+                                  <span className="font-bold text-green-600">
+                                    ₱
+                                    {batchProduct.price_per_vial}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm">Progress:</span>
+                                  <span className="text-sm font-medium">
+                                    {batchProduct.current_vials}
+                                    /
+                                    {batchProduct.target_vials}
+                                    {' '}
+                                    vials
+                                  </span>
+                                </div>
+                                <div className="h-2 w-full rounded-full bg-green-200">
+                                  <div
+                                    className="h-2 rounded-full bg-green-600 transition-all duration-300"
+                                    style={{ width: `${productProgress}%` }}
+                                  />
+                                </div>
                               </div>
                             </div>
-                            <Badge className={status.color}>{status.text}</Badge>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">Price per vial:</span>
-                              <span className="font-bold text-green-600">
-                                ₱
-                                {batchProduct.price_per_vial}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">Progress:</span>
-                              <span className="text-sm font-medium">
-                                {batchProduct.current_vials}
-                                /
-                                {batchProduct.target_vials}
-                                {' '}
-                                vials
-                              </span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-green-200">
-                              <div
-                                className="h-2 rounded-full bg-green-600 transition-all duration-300"
-                                style={{ width: `${productProgress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          );
+                        })}
+                      </div>
 
-                  {/* Batch Actions */}
-                  <div className="border-t border-green-200 pt-6">
-                    <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                      <Button size="lg" className="bg-green-600 text-white hover:bg-green-700" asChild>
-                        <Link href={`/products/group-buy/${activeBatch.id}`}>
-                          <Users className="mr-2 h-5 w-5" />
-                          Join This Batch
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button size="lg" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50" asChild>
+                      {/* Batch Actions */}
+                      <div className="border-t border-green-200 pt-6">
+                        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                          <Button size="lg" className="bg-green-600 text-white hover:bg-green-700" asChild>
+                            <Link href={`/products/group-buy/${activeBatch.id}`}>
+                              <Users className="mr-2 h-5 w-5" />
+                              Join This Batch
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button size="lg" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50" asChild>
+                            <Link href="/products/group-buy">
+                              <TrendingUp className="mr-2 h-5 w-5" />
+                              View All Batches
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )
+                : (
+                    <div className="py-8 text-center">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                        <Package className="h-8 w-8 text-green-400" />
+                      </div>
+                      <h3 className="mb-2 text-xl font-semibold text-gray-900">No Products in Batch</h3>
+                      <p className="mb-6 text-gray-600">This batch doesn't have any products yet.</p>
+                      <Button size="lg" variant="outline" asChild>
                         <Link href="/products/group-buy">
                           <TrendingUp className="mr-2 h-5 w-5" />
                           View All Batches
                         </Link>
                       </Button>
                     </div>
-                  </div>
-                </>
-              ) : (
-                <div className="py-8 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                    <Package className="h-8 w-8 text-green-400" />
-                  </div>
-                  <h3 className="mb-2 text-xl font-semibold text-gray-900">No Products in Batch</h3>
-                  <p className="mb-6 text-gray-600">This batch doesn't have any products yet.</p>
-                  <Button size="lg" variant="outline" asChild>
-                    <Link href="/products/group-buy">
-                      <TrendingUp className="mr-2 h-5 w-5" />
-                      View All Batches
-                    </Link>
-                  </Button>
-                </div>
-              )}
+                  )}
             </CardContent>
           </Card>
         </div>

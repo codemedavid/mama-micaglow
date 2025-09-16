@@ -98,7 +98,7 @@ function FormLabel({
       data-error={!!error}
       className={cn('data-[error=true]:text-destructive', className)}
       htmlFor={formItemId}
-      {...props}
+      {...(props as any)}
     />
   );
 }

@@ -65,7 +65,7 @@ export default function CheckoutPage() {
       if (!acc[item.type]) {
         acc[item.type] = [];
       }
-      acc[item.type].push(item);
+      acc[item.type]?.push(item);
       return acc;
     }, {} as Record<string, typeof state.items>);
 

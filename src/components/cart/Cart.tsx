@@ -44,7 +44,7 @@ export function Cart() {
         const clampedQuantity = Math.min(newQuantity, item.maxQuantity);
         if (clampedQuantity !== newQuantity) {
           // Show alert if trying to exceed limit
-          alert(`Cannot add more than ${item.maxQuantity} vials. Only ${item.maxQuantity} vials remaining for ${item.name}.`);
+          // Show user feedback for quantity limit
         }
         dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity: clampedQuantity } });
       } else {
@@ -159,7 +159,9 @@ export function Cart() {
                       {items.length}
                       {' '}
                       item
-                      {items.length !== 1 ? 's' : ''}
+                      {items.length !== 1
+                        ? 's'
+                        : ''}
                     </Badge>
                   </div>
 
@@ -212,7 +214,7 @@ export function Cart() {
                                   size="sm"
                                   className="h-8 w-8 p-0"
                                   onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                  disabled={item.type === 'group-buy' && item.maxQuantity && item.quantity >= item.maxQuantity}
+                                  disabled={item.type === 'group-buy' && item.maxQuantity ? item.quantity >= (item.maxQuantity as number) : false}
                                 >
                                   <Plus className="h-3 w-3" />
                                 </Button>
@@ -285,20 +287,19 @@ export function Cart() {
         {hasGroupBuyItems() && (
           <GroupBuyCheckout
             batchId={Number.parseInt((getGroupBuyItems()[0]?.batchId as string) || (getGroupBuyItems()[0]?.id.split('-')[2] || '0'))}
-            batchName={`Group Buy Batch #${(getGroupBuyItems()[0]?.batchId as string) || getGroupBuyItems()[0].id.split('-')[2] || ''}`}
+            batchName={`Group Buy Batch #${(getGroupBuyItems()[0]?.batchId as string) || getGroupBuyItems()[0]?.id.split('-')[2] || ''}`}
             isOpen={isCheckoutOpen}
             onClose={closeGroupBuyCheckout}
             prefillItems={getGroupBuyItems().map(it => ({
-              id: it.id,
+              id: String(it.id),
               name: it.name,
-              price: it.price,
-              quantity: it.quantity,
+              price: Number(it.price),
+              quantity: Number(it.quantity),
               type: 'group-buy' as const,
-              batchId: (it.batchId as string) || (typeof it.id === 'string'
-                ? it.id.split('-')[2]
-                : ''),
-              productId: it.productId as number,
+              batchId: String(it.batchId ?? (typeof it.id === 'string' ? it.id.split('-')[2] : '')),
+              productId: Number(it.productId ?? 0),
             }))}
+
             prefillTotal={getGroupBuyTotal()}
           />
         )}

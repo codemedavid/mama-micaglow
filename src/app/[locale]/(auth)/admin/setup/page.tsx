@@ -73,7 +73,6 @@ export default function AdminSetupPage() {
 
       setEmail('');
     } catch (error) {
-      console.error('Error promoting user to admin:', error);
       setMessage(error instanceof Error ? error.message : 'An error occurred');
       setMessageType('error');
     } finally {
@@ -130,7 +129,6 @@ export default function AdminSetupPage() {
         setMessageType('success');
       }
     } catch (error) {
-      console.error('Error creating admin user:', error);
       setMessage(error instanceof Error ? error.message : 'An error occurred');
       setMessageType('error');
     } finally {

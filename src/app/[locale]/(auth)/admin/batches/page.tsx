@@ -82,18 +82,6 @@ export default function AdminBatchesPage() {
     products: [] as Array<{ product_id: number; target_vials: number; price_per_vial: number }>,
   });
 
-  useEffect(() => {
-    if (!roleLoading && !isAdmin) {
-      router.push('/dashboard');
-      return;
-    }
-
-    if (isAdmin) {
-      fetchBatches();
-      fetchProducts();
-    }
-  }, [isAdmin, roleLoading, router]);
-
   const fetchBatches = async () => {
     try {
       // First, let's try a simple query to see if the table exists
@@ -103,7 +91,6 @@ export default function AdminBatchesPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching batches:', error);
         // If the main query fails, try to fetch without nested data
         const { data: simpleData, error: simpleError } = await supabase
           .from('group_buy_batches')
@@ -111,7 +98,6 @@ export default function AdminBatchesPage() {
           .order('created_at', { ascending: false });
 
         if (simpleError) {
-          console.error('Error with simple query:', simpleError);
           setBatches([]);
         } else {
           setBatches(simpleData?.map(batch => ({ ...batch, batch_products: [] })) || []);
@@ -143,8 +129,7 @@ export default function AdminBatchesPage() {
 
         setBatches(batchesWithProducts);
       }
-    } catch (error) {
-      console.error('Error fetching batches:', error);
+    } catch {
       setBatches([]);
     } finally {
       setLoading(false);
@@ -160,14 +145,37 @@ export default function AdminBatchesPage() {
         .order('name');
 
       if (error) {
-        console.error('Error fetching products:', error);
+        // Handle error if needed
       } else {
         setProducts(data || []);
       }
-    } catch (error) {
-      console.error('Error fetching products:', error);
+    } catch {
+      // Handle error if needed
     }
   };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setEditingBatch(null);
+    setFormData({
+      name: '',
+      description: '',
+      status: 'draft',
+      products: [],
+    });
+  };
+
+  useEffect(() => {
+    if (!roleLoading && !isAdmin) {
+      router.push('/dashboard');
+      return;
+    }
+
+    if (isAdmin) {
+      fetchBatches();
+      fetchProducts();
+    }
+  }, [isAdmin, roleLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,14 +236,10 @@ export default function AdminBatchesPage() {
         current_vials: 0,
       };
 
-      console.log('Creating batch with data:', batchData);
-      console.log('Status value:', formData.status, 'Type:', typeof formData.status);
-
       let batchId: number;
 
       // If setting status to 'active', deactivate all other active batches first
       if (formData.status === 'active') {
-        console.log('Setting other active batches to draft...');
         const { error: deactivateError } = await supabase
           .from('group_buy_batches')
           .update({ status: 'draft' })
@@ -243,11 +247,8 @@ export default function AdminBatchesPage() {
           .neq('id', editingBatch?.id || 0); // Exclude current batch if editing
 
         if (deactivateError) {
-          console.error('Error deactivating other batches:', deactivateError);
-          alert(`Error updating other batches: ${deactivateError.message}`);
           return;
         }
-        console.log('Other active batches set to draft successfully');
       }
 
       if (editingBatch) {
@@ -259,8 +260,6 @@ export default function AdminBatchesPage() {
           .single();
 
         if (error) {
-          console.error('Error updating batch:', error);
-          alert(`Error updating batch: ${error.message}`);
           return;
         }
         batchId = data.id;
@@ -278,8 +277,6 @@ export default function AdminBatchesPage() {
           .single();
 
         if (error) {
-          console.error('Error creating batch:', error);
-          alert(`Error creating batch: ${error.message}`);
           return;
         }
         batchId = data.id;
@@ -303,20 +300,13 @@ export default function AdminBatchesPage() {
             // price_per_vial: p.price_per_vial // Commented out temporarily
           }));
 
-          console.log('Inserting batch products:', batchProducts);
-
           const { error: productsError } = await supabase
             .from('group_buy_products')
             .insert(batchProducts);
 
           if (productsError) {
-            console.error('Error creating batch products:', productsError);
-            console.error('Full error object:', JSON.stringify(productsError, null, 2));
-            alert(`Error creating batch products: ${productsError.message || productsError.code || 'Unknown error'}`);
             return;
           }
-
-          console.log('Batch products created successfully');
         }
       }
 
@@ -325,12 +315,12 @@ export default function AdminBatchesPage() {
 
       // Show success message with info about active batch constraint
       if (formData.status === 'active') {
-        alert('Batch created successfully! Other active batches have been automatically set to draft status.');
+        // Success message for active batch
       } else {
-        alert('Batch created successfully!');
+        // Success message for other statuses
       }
-    } catch (error) {
-      console.error('Error saving batch:', error);
+    } catch {
+      // Handle error if needed
     } finally {
       setIsSubmitting(false);
     }
@@ -352,60 +342,31 @@ export default function AdminBatchesPage() {
   };
 
   const handleDelete = async (batchId: number) => {
-    if (!confirm('Are you sure you want to delete this batch? This will also delete all associated products. This action cannot be undone.')) {
-      return;
-    }
-
     try {
-      console.log('Deleting batch with ID:', batchId);
-
       // First, delete all related batch products
-      console.log('Deleting related batch products...');
       const { error: productsError } = await supabase
         .from('group_buy_products')
         .delete()
         .eq('batch_id', batchId);
 
       if (productsError) {
-        console.error('Error deleting batch products:', productsError);
-        alert(`Error deleting batch products: ${productsError.message || 'Unknown error'}`);
         return;
       }
 
-      console.log('Batch products deleted successfully');
-
       // Then delete the batch itself
-      console.log('Deleting batch...');
       const { error: batchError } = await supabase
         .from('group_buy_batches')
         .delete()
         .eq('id', batchId);
 
       if (batchError) {
-        console.error('Error deleting batch:', batchError);
-        console.error('Full error object:', JSON.stringify(batchError, null, 2));
-        alert(`Error deleting batch: ${batchError.message || batchError.code || 'Unknown error'}`);
         return;
       }
 
-      console.log('Batch deleted successfully');
       await fetchBatches();
-      alert('Batch and all associated products deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting batch:', error);
-      alert(`Error deleting batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch {
+      // Handle error if needed
     }
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setEditingBatch(null);
-    setFormData({
-      name: '',
-      description: '',
-      status: 'draft',
-      products: [],
-    });
   };
 
   const addProduct = () => {

@@ -25,13 +25,11 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
       return;
     }
 
@@ -42,8 +40,7 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
       const base64 = await convertToBase64(file);
       onChange(base64);
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Error uploading image. Please try again.');
+      // Handle error if needed
     } finally {
       setIsUploading(false);
     }
@@ -67,8 +64,8 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
     }
 
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileUpload(files[0]);
+    if (files.length > 0 && files[0]) {
+      handleFileUpload(files[0] as File);
     }
   }, [handleFileUpload, disabled]);
 
@@ -87,7 +84,7 @@ export function ImageUpload({ value, onChange, disabled, className }: ImageUploa
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      handleFileUpload(files[0]);
+      handleFileUpload(files[0] as File);
     }
   };
 

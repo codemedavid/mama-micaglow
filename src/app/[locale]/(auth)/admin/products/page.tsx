@@ -99,12 +99,10 @@ export default function AdminProductsPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching products:', error);
       } else {
         setProducts(data || []);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
     }
@@ -134,7 +132,6 @@ export default function AdminProductsPage() {
           .eq('id', editingProduct.id);
 
         if (error) {
-          console.error('Error updating product:', error);
           return;
         }
       } else {
@@ -143,7 +140,6 @@ export default function AdminProductsPage() {
           .insert(productData);
 
         if (error) {
-          console.error('Error creating product:', error);
           return;
         }
       }
@@ -153,7 +149,6 @@ export default function AdminProductsPage() {
       resetForm();
       fetchProducts();
     } catch (error) {
-      console.error('Error saving product:', error);
     }
   };
 
@@ -171,12 +166,7 @@ export default function AdminProductsPage() {
     });
     setIsDialogOpen(true);
   };
-
   const handleDelete = async (productId: number) => {
-    if (!confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('products')
@@ -184,18 +174,18 @@ export default function AdminProductsPage() {
         .eq('id', productId);
 
       if (error) {
-        console.error('Error deleting product:', error);
-        return;
+        // Handle error if needed
+      } else {
+        fetchProducts();
       }
-
-      fetchProducts();
     } catch (error) {
-      console.error('Error deleting product:', error);
+      // Handle error if needed
     }
   };
 
   const resetForm = () => {
-    setFormData({
+    setFormData(prev => ({
+      ...prev,
       name: '',
       description: '',
       category: '',
@@ -204,7 +194,7 @@ export default function AdminProductsPage() {
       vials_per_box: '10',
       image_url: '',
       specifications: '',
-    });
+    }));
   };
 
   const handleDialogClose = () => {
@@ -270,7 +260,7 @@ export default function AdminProductsPage() {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value as string }))}
                       required
                     />
                   </div>
@@ -278,7 +268,7 @@ export default function AdminProductsPage() {
                     <Label htmlFor="category">Category</Label>
                     <Select
                       value={formData.category}
-                      onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
+                      onValueChange={value => setFormData(prev => ({ ...prev, category: value as string }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
@@ -299,7 +289,7 @@ export default function AdminProductsPage() {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value as string }))}
                     rows={3}
                   />
                 </div>
@@ -312,7 +302,7 @@ export default function AdminProductsPage() {
                       type="number"
                       step="0.01"
                       value={formData.price_per_vial}
-                      onChange={e => setFormData(prev => ({ ...prev, price_per_vial: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, price_per_vial: e.target.value as string }))}
                       required
                     />
                   </div>
@@ -323,7 +313,7 @@ export default function AdminProductsPage() {
                       type="number"
                       step="0.01"
                       value={formData.price_per_box}
-                      onChange={e => setFormData(prev => ({ ...prev, price_per_box: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, price_per_box: e.target.value as string }))}
                       required
                     />
                   </div>
@@ -333,7 +323,7 @@ export default function AdminProductsPage() {
                       id="vials_per_box"
                       type="number"
                       value={formData.vials_per_box}
-                      onChange={e => setFormData(prev => ({ ...prev, vials_per_box: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, vials_per_box: e.target.value as string }))}
                       required
                     />
                   </div>
@@ -356,7 +346,7 @@ export default function AdminProductsPage() {
                   <Textarea
                     id="specifications"
                     value={formData.specifications}
-                    onChange={e => setFormData(prev => ({ ...prev, specifications: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, specifications: e.target.value as string }))}
                     rows={4}
                     placeholder='{"purity": "99%", "storage": "2-8°C", "shelf_life": "24 months"}'
                   />

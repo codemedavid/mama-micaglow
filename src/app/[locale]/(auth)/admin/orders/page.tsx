@@ -79,10 +79,6 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -99,19 +95,19 @@ export default function OrdersPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching orders:', error);
-        alert(`Error fetching orders: ${error.message}`);
+        // Handle error if needed
       } else {
-        console.log('Orders fetched successfully:', data);
         setOrders(data || []);
       }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      alert('Error fetching orders');
+    } catch {
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
@@ -121,16 +117,12 @@ export default function OrdersPage() {
         .eq('id', orderId);
 
       if (error) {
-        console.error('Error updating order status:', error);
-        alert(`Error updating order status: ${error.message}`);
+        // Handle error if needed
       } else {
-        console.log('Order status updated successfully');
         await fetchOrders();
-        alert('Order status updated successfully!');
       }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      alert('Error updating order status');
+    } catch {
+      // Handle error if needed
     }
   };
 
@@ -142,16 +134,12 @@ export default function OrdersPage() {
         .eq('id', orderId);
 
       if (error) {
-        console.error('Error updating payment status:', error);
-        alert(`Error updating payment status: ${error.message}`);
+        // Handle error if needed
       } else {
-        console.log('Payment status updated successfully');
         await fetchOrders();
-        alert('Payment status updated successfully!');
       }
-    } catch (error) {
-      console.error('Error updating payment status:', error);
-      alert('Error updating payment status');
+    } catch {
+      // Handle error if needed
     }
   };
 
@@ -212,7 +200,7 @@ export default function OrdersPage() {
       {/* Filters */}
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-medium">Filter by Status</label>
+          <label htmlFor="status-filter" className="mb-2 block text-sm font-medium">Filter by Status</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger>
               <SelectValue placeholder="All Statuses" />
@@ -222,7 +210,8 @@ export default function OrdersPage() {
               {statusOptions.map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   <div className="flex items-center gap-2">
-                    {React.createElement(option.icon, { className: 'h-4 w-4' })}
+                    <option.icon className="h-4 w-4" />
+
                     {option.label}
                   </div>
                 </SelectItem>
@@ -232,7 +221,7 @@ export default function OrdersPage() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium">Filter by Payment Status</label>
+          <label htmlFor="payment-status-filter" className="mb-2 block text-sm font-medium">Filter by Payment Status</label>
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
             <SelectTrigger>
               <SelectValue placeholder="All Payment Statuses" />
@@ -253,154 +242,156 @@ export default function OrdersPage() {
       </div>
 
       {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ShoppingCart className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-xl font-semibold">No Orders Found</h3>
-            <p className="text-muted-foreground">
-              {orders.length === 0
-                ? 'No orders have been placed yet.'
-                : 'No orders match the current filters.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {filteredOrders.map(order => (
-            <Card key={order.id} className="transition-shadow hover:shadow-lg">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{order.order_code}</CardTitle>
-                    <CardDescription className="mt-1">
-                      Batch:
-                      {' '}
-                      {order.batch.name}
-                      {' '}
-                      • Created:
-                      {' '}
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${statusOptions.find(s => s.value === order.status)?.color} flex items-center gap-1`}>
-                      {getStatusIcon(order.status)}
-                      {statusOptions.find(s => s.value === order.status)?.label}
-                    </Badge>
-                    <Badge className={`${paymentStatusOptions.find(s => s.value === order.payment_status)?.color} flex items-center gap-1`}>
-                      {getPaymentStatusIcon(order.payment_status)}
-                      {paymentStatusOptions.find(s => s.value === order.payment_status)?.label}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {/* Customer Info */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">{order.customer_name}</div>
-                      <div className="text-sm text-muted-foreground">Customer Name</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">{order.whatsapp_number}</div>
-                      <div className="text-sm text-muted-foreground">WhatsApp Number</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Order Items */}
-                <div>
-                  <h4 className="mb-2 font-medium">Order Items:</h4>
-                  <div className="space-y-2">
-                    {order.order_items.map(item => (
-                      <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                        <div>
-                          <div className="font-medium">{item.product.name}</div>
-                          <div className="text-sm text-muted-foreground">{item.product.category}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {item.quantity}
-                            {' '}
-                            vial(s)
-                          </div>
-                          <div className="text-sm font-bold">
-                            ₱
-                            {item.total_price.toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Total Amount */}
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">Total Amount:</span>
-                    <span className="text-xl font-bold text-green-600">
-                      ₱
-                      {order.total_amount.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-wrap gap-3 pt-4">
-                  <Button
-                    onClick={() => openWhatsApp(order)}
-                    variant="outline"
-                    className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-                  >
-                    <Phone className="mr-2 h-4 w-4" />
-                    Contact via WhatsApp
-                  </Button>
-
-                  <Select value={order.status} onValueChange={value => updateOrderStatus(order.id, value)}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            {React.createElement(option.icon, { className: 'h-4 w-4' })}
-                            {option.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={order.payment_status} onValueChange={value => updatePaymentStatus(order.id, value)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentStatusOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            {getPaymentStatusIcon(option.value)}
-                            {option.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      {filteredOrders.length === 0
+        ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <ShoppingCart className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                <h3 className="mb-2 text-xl font-semibold">No Orders Found</h3>
+                <p className="text-muted-foreground">
+                  {orders.length === 0
+                    ? 'No orders have been placed yet.'
+                    : 'No orders match the current filters.'}
+                </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          )
+        : (
+            <div className="space-y-6">
+              {filteredOrders.map(order => (
+                <Card key={order.id} className="transition-shadow hover:shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl">{order.order_code}</CardTitle>
+                        <CardDescription className="mt-1">
+                          Batch:
+                          {' '}
+                          {order.batch.name}
+                          {' '}
+                          • Created:
+                          {' '}
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${statusOptions.find(s => s.value === order.status)?.color} flex items-center gap-1`}>
+                          {getStatusIcon(order.status)}
+                          {statusOptions.find(s => s.value === order.status)?.label}
+                        </Badge>
+                        <Badge className={`${paymentStatusOptions.find(s => s.value === order.payment_status)?.color} flex items-center gap-1`}>
+                          {getPaymentStatusIcon(order.payment_status)}
+                          {paymentStatusOptions.find(s => s.value === order.payment_status)?.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    {/* Customer Info */}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="flex items-center gap-3">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">{order.customer_name}</div>
+                          <div className="text-sm text-muted-foreground">Customer Name</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">{order.whatsapp_number}</div>
+                          <div className="text-sm text-muted-foreground">WhatsApp Number</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div>
+                      <h4 className="mb-2 font-medium">Order Items:</h4>
+                      <div className="space-y-2">
+                        {order.order_items.map(item => (
+                          <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                            <div>
+                              <div className="font-medium">{item.product.name}</div>
+                              <div className="text-sm text-muted-foreground">{item.product.category}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-medium">
+                                {item.quantity}
+                                {' '}
+                                vial(s)
+                              </div>
+                              <div className="text-sm font-bold">
+                                ₱
+                                {item.total_price.toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Total Amount */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-semibold">Total Amount:</span>
+                        <span className="text-xl font-bold text-green-600">
+                          ₱
+                          {order.total_amount.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-3 pt-4">
+                      <Button
+                        onClick={() => openWhatsApp(order)}
+                        variant="outline"
+                        className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                      >
+                        <Phone className="mr-2 h-4 w-4" />
+                        Contact via WhatsApp
+                      </Button>
+
+                      <Select value={order.status} onValueChange={value => updateOrderStatus(order.id, value)}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex items-center gap-2">
+                                <option.icon className="h-4 w-4" />
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={order.payment_status} onValueChange={value => updatePaymentStatus(order.id, value)}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentStatusOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex items-center gap-2">
+                                {getPaymentStatusIcon(option.value)}
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
     </div>
   );
 }

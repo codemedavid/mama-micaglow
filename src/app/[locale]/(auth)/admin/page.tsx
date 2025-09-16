@@ -83,8 +83,7 @@ export default function AdminOverviewPage() {
         recentUsers: recentUsers || [],
         topProducts: recentProducts?.slice(0, 3) || [],
       });
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -227,7 +226,7 @@ export default function AdminOverviewPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stats.recentProducts.map((product, index) => (
+                  {stats.recentProducts.map((product, _index) => (
                     <div key={product.id} className="flex items-center justify-between rounded-lg border border-purple-200/50 bg-gradient-to-r from-purple-50 to-purple-100/50 p-4">
                       <div className="flex items-center space-x-4">
                         <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 font-bold text-white">

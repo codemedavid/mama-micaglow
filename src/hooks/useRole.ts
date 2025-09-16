@@ -45,7 +45,6 @@ export function useRole() {
         if (error) {
           // If user profile doesn't exist, create one
           if (error.code === 'PGRST116') {
-            console.log('User profile not found, creating new profile...');
             const newProfile = await createUserProfile('customer');
             if (newProfile) {
               setUserProfile(newProfile);
@@ -53,14 +52,12 @@ export function useRole() {
               setUserProfile(null);
             }
           } else {
-            console.error('Error fetching user profile:', error);
             setUserProfile(null);
           }
         } else {
           setUserProfile(data);
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
         setUserProfile(null);
       } finally {
         setLoading(false);
@@ -102,14 +99,12 @@ export function useRole() {
         .single();
 
       if (error) {
-        console.error('Error creating user profile:', error);
         return null;
       }
 
       setUserProfile(data);
       return data;
     } catch (error) {
-      console.error('Error creating user profile:', error);
       return null;
     }
   };
@@ -126,14 +121,12 @@ export function useRole() {
         .eq('id', userProfile.id);
 
       if (error) {
-        console.error('Error updating user role:', error);
         return false;
       }
 
       setUserProfile(prev => prev ? { ...prev, role: newRole } : null);
       return true;
     } catch (error) {
-      console.error('Error updating user role:', error);
       return false;
     }
   };

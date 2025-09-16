@@ -71,9 +71,10 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
   const sourceItems: OrderItem[] = (prefillItems && prefillItems.length > 0)
     ? (prefillItems as OrderItem[])
     : (groupBuyItems as unknown as OrderItem[]);
-  const totalAmount = (typeof prefillTotal === 'number')
-    ? prefillTotal
-    : (sourceItems as OrderItem[]).reduce((sum: number, item: OrderItem) => sum + (item.price * item.quantity), 0);
+  // Calculate total amount for display
+  // const _totalAmount = (typeof prefillTotal === 'number')
+  //   ? prefillTotal
+  //   : (sourceItems as OrderItem[]).reduce((sum: number, item: OrderItem) => sum + (item.price * item.quantity), 0);
 
   // Snapshot current items for this batch when dialog opens, clear on close
   useEffect(() => {
@@ -150,7 +151,6 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
         payment_status: 'pending',
       };
 
-
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderData)
@@ -161,7 +161,6 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
         throw orderError;
       }
 
-
       // Create order items with detailed information
       const orderItems = itemsForCheckout.map(item => ({
         order_id: order.id,
@@ -171,7 +170,6 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
         total_price: item.price * item.quantity,
       }));
 
-
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
@@ -179,7 +177,6 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
       if (itemsError) {
         throw itemsError;
       }
-
 
       // Update batch progress
       const totalVials = itemsForCheckout.reduce((sum, item) => sum + item.quantity, 0);
@@ -204,7 +201,6 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
 
         if (updateError) {
           // Don't throw here, order is already created
-        } else {
         }
       }
 
@@ -219,7 +215,6 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
 
         if (productUpdateError) {
           // Don't throw here, order is already created
-        } else {
         }
       }
 
@@ -257,11 +252,15 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
         const whatsappUrl = `https://wa.me/6391549012244?text=${encodedMessage}`;
         window.open(whatsappUrl, '_blank');
         onClose();
-      } catch {}
+      } catch {
+        // Silently ignore WhatsApp redirect errors
+      }
     } catch (error) {
       if (error && typeof error === 'object' && 'message' in error) {
+        // Handle error message if needed
       }
       if (error && typeof error === 'object' && 'code' in error) {
+        // Handle error code if needed
       }
     } finally {
       setIsSubmitting(false);

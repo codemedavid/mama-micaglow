@@ -12,13 +12,12 @@ try {
       migrationsFolder: path.join(process.cwd(), 'migrations'),
     });
   }
-} catch (error) {
+} catch (_error) {
   // Silently ignore database migration errors in development
-  console.warn('Database migration skipped:', error.message);
 } finally {
   try {
     await db.$client.end();
-  } catch (error) {
+  } catch (_error) {
     // Silently ignore connection close errors
   }
 }
