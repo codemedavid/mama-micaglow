@@ -1,96 +1,28 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Link from 'next/link';
-import { DemoBanner } from '@/components/DemoBanner';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
-import { BaseTemplate } from '@/templates/BaseTemplate';
+import type { Metadata } from 'next';
+import { Footer } from '@/components/layout/Footer';
+import { Navigation } from '@/components/layout/Navigation';
+import { CartProvider } from '@/contexts/CartContext';
 
-export default async function Layout(props: {
+export const metadata: Metadata = {
+  title: 'Mama_MicaGlow - Premium Peptide Retail Platform',
+  description: 'Discover premium peptides with individual buying, group buy, and regional sub-group options. Philippine Peso pricing with secure transactions.',
+  keywords: 'peptides, group buy, individual purchase, Philippines, Mama_MicaGlow',
+};
+
+export default function MarketingLayout({
+  children,
+}: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await props.params;
-  setRequestLocale(locale);
-  const t = await getTranslations({
-    locale,
-    namespace: 'RootLayout',
-  });
-
   return (
-    <>
-      <DemoBanner />
-      <BaseTemplate
-        leftNav={(
-          <>
-            <li>
-              <Link
-                href="/"
-                className="border-none text-gray-700 hover:text-gray-900"
-              >
-                {t('home_link')}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/about/"
-                className="border-none text-gray-700 hover:text-gray-900"
-              >
-                {t('about_link')}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/counter/"
-                className="border-none text-gray-700 hover:text-gray-900"
-              >
-                {t('counter_link')}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/portfolio/"
-                className="border-none text-gray-700 hover:text-gray-900"
-              >
-                {t('portfolio_link')}
-              </Link>
-            </li>
-            <li>
-              <a
-                className="border-none text-gray-700 hover:text-gray-900"
-                href="https://github.com/ixartz/Next-js-Boilerplate"
-              >
-                GitHub
-              </a>
-            </li>
-          </>
-        )}
-        rightNav={(
-          <>
-            <li>
-              <Link
-                href="/sign-in/"
-                className="border-none text-gray-700 hover:text-gray-900"
-              >
-                {t('sign_in_link')}
-              </Link>
-            </li>
-
-            <li>
-              <Link
-                href="/sign-up/"
-                className="border-none text-gray-700 hover:text-gray-900"
-              >
-                {t('sign_up_link')}
-              </Link>
-            </li>
-
-            <li>
-              <LocaleSwitcher />
-            </li>
-          </>
-        )}
-      >
-        <div className="py-5 text-xl [&_p]:my-6">{props.children}</div>
-      </BaseTemplate>
-    </>
+    <CartProvider>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="flex-1">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </CartProvider>
   );
 }

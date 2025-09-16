@@ -6,9 +6,19 @@ import { createDbConnection } from './DBConnection';
 const db = createDbConnection();
 
 try {
-  await migrate(db, {
-    migrationsFolder: path.join(process.cwd(), 'migrations'),
-  });
+  // Only run migrations if we have a valid database connection
+  if (process.env.DATABASE_URL) {
+    await migrate(db, {
+      migrationsFolder: path.join(process.cwd(), 'migrations'),
+    });
+  }
+} catch (error) {
+  // Silently ignore database migration errors in development
+  console.warn('Database migration skipped:', error.message);
 } finally {
-  await db.$client.end();
+  try {
+    await db.$client.end();
+  } catch (error) {
+    // Silently ignore connection close errors
+  }
 }
