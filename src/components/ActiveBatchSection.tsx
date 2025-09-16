@@ -298,7 +298,7 @@ export default function ActiveBatchSection() {
                                   <span className="text-sm">Price per vial:</span>
                                   <span className="font-bold text-green-600">
                                     ₱
-                                    {batchProduct.price_per_vial}
+                                    {product.price_per_vial}
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -327,7 +327,7 @@ export default function ActiveBatchSection() {
                       <div className="border-t border-green-200 pt-6">
                         <div className="flex flex-col justify-center gap-4 sm:flex-row">
                           <Button size="lg" className="bg-green-600 text-white hover:bg-green-700" asChild>
-                            <Link href={`/products/group-buy/${activeBatch.id}`}>
+                            <Link href="/products/group-buy">
                               <Users className="mr-2 h-5 w-5" />
                               Join This Batch
                               <ArrowRight className="ml-2 h-4 w-4" />
