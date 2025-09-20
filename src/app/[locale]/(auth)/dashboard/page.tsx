@@ -3,7 +3,6 @@ import { currentUser } from '@clerk/nextjs/server';
 import { Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardTabs } from '@/components/DashboardTabs';
-import { RoleDebugger } from '@/components/RoleDebugger';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
@@ -112,7 +111,7 @@ export default async function Dashboard() {
       </div>
 
       <div className="container mx-auto px-4 py-8 lg:px-6">
-        <RoleDebugger />
+        {/* <RoleDebugger /> */}
         <DashboardTabs
           recentOrders={recentOrders}
           totalOrders={stats.totalOrders}
