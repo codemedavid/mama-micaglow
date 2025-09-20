@@ -1,10 +1,11 @@
 'use client';
 
 import { useClerk, useUser } from '@clerk/nextjs';
-import { LogOut, Menu, Package, Settings, Shield, ShoppingBag, User } from 'lucide-react';
+import { LogOut, Menu, Package, Search, Settings, Shield, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Cart } from '@/components/cart/Cart';
+import { FloatingCart } from '@/components/cart/FloatingCart';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -24,6 +25,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useRole } from '@/hooks/useRole';
@@ -105,6 +107,14 @@ export function Navigation() {
 
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
+                  <Link href="/track-order" className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                    Track Order
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
                   <Link href="/about" className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
                     About
                   </Link>
@@ -150,7 +160,7 @@ export function Navigation() {
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
-                            <Link href="/admin/products" className="flex items-center">
+                            <Link href="/admin" className="flex items-center ">
                               <Shield className="mr-2 h-4 w-4" />
                               Admin Panel
                             </Link>
@@ -190,6 +200,7 @@ export function Navigation() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
               <div className="mt-8 flex flex-col space-y-4">
                 <Link
                   href="/products"
@@ -221,6 +232,14 @@ export function Navigation() {
                   <span>Regional Sub-Groups</span>
                 </Link>
                 <Link
+                  href="/track-order"
+                  className="flex items-center space-x-2 text-lg font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Search className="h-5 w-5" />
+                  <span>Track Order</span>
+                </Link>
+                <Link
                   href="/about"
                   className="flex items-center space-x-2 text-lg font-medium"
                   onClick={() => setIsOpen(false)}
@@ -235,9 +254,6 @@ export function Navigation() {
                   <span>Contact</span>
                 </Link>
                 <div className="border-t pt-4">
-                  <div className="mb-2 w-full">
-                    <Cart />
-                  </div>
                   {isSignedIn
                     ? (
                         <>
@@ -295,6 +311,12 @@ export function Navigation() {
           </Sheet>
         </div>
       </div>
+
+      {/* Floating Cart for Mobile */}
+      <div className="hidden md:hidden">
+        <FloatingCart />
+      </div>
+
     </header>
   );
 }

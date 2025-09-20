@@ -6,10 +6,12 @@ import {
   CreditCard,
   Loader2,
   Phone,
+  Search,
   ShoppingCart,
   User,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -22,13 +24,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/contexts/CartContext';
+import { useRole } from '@/hooks/useRole';
 import { supabase } from '@/lib/supabase';
 
 type GroupBuyCheckoutProps = {
   batchId: number;
   batchName: string;
   isOpen: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
   prefillItems?: OrderItem[];
   prefillTotal?: number;
 };
@@ -43,8 +46,9 @@ type OrderItem = {
   productId: number;
 };
 
-export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, prefillItems, prefillTotal }: GroupBuyCheckoutProps) {
+export default function GroupBuyCheckout({ batchId, batchName, isOpen, onCloseAction, prefillItems, prefillTotal }: GroupBuyCheckoutProps) {
   const { state: cartState, dispatch } = useCart();
+  const { userProfile } = useRole();
   const [customerName, setCustomerName] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,17 +81,13 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
   //   : (sourceItems as OrderItem[]).reduce((sum: number, item: OrderItem) => sum + (item.price * item.quantity), 0);
 
   // Snapshot current items for this batch when dialog opens, clear on close
-  const updateCheckoutItems = useCallback(() => {
+  useEffect(() => {
     if (isOpen) {
       setCheckoutItems(sourceItems as OrderItem[]);
     } else {
       setCheckoutItems([]);
     }
   }, [isOpen, sourceItems]);
-
-  useEffect(() => {
-    updateCheckoutItems();
-  }, [updateCheckoutItems]);
 
   // Small utility: wait then check order + items persisted
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -118,11 +118,8 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
       return;
     }
 
-    // Starting order creation process
-
     // Snapshot items for this checkout to avoid race conditions
     const itemsForCheckout = checkoutItems.length > 0 ? checkoutItems : sourceItems as OrderItem[];
-    // Items for checkout (snapshot)
 
     if (itemsForCheckout.length === 0) {
       return;
@@ -133,120 +130,256 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
     setIsSubmitting(true);
 
     try {
-      // Generate order code
-      // Generating order code
-      const { data: orderCodeData, error: codeError } = await supabase
-        .rpc('generate_order_code');
+      let existingOrder: any = null;
+      let orderCode = '';
+      let isOrderUpdate = false;
+      let order: any = null;
 
-      if (codeError) {
-        throw codeError;
-      }
+      // ONLY check for existing orders if user is logged in
+      if (userProfile?.id) {
+        console.warn('🔍 Checking for existing orders for user:', userProfile.id, 'batch:', batchId);
+        const { data: existingOrders, error: existingOrdersError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', userProfile.id)
+          .eq('batch_id', batchId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      const generatedOrderCode = orderCodeData;
+        console.warn('📋 Existing orders query result:', { existingOrders, existingOrdersError });
 
-      // Create order with comprehensive details
-      const orderData = {
-        order_code: generatedOrderCode,
-        customer_name: customerName.trim(),
-        whatsapp_number: whatsappNumber.trim(),
-        batch_id: batchId,
-        total_amount: totalForCheckout,
-        status: 'pending',
-        payment_status: 'pending',
-      };
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderData)
-        .select()
-        .single();
-
-      if (orderError) {
-        throw orderError;
-      }
-
-      // Create order items with detailed information
-      const orderItems = itemsForCheckout.map(item => ({
-        order_id: order.id,
-        product_id: item.productId,
-        quantity: item.quantity,
-        price_per_vial: item.price,
-        total_price: item.price * item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) {
-        throw itemsError;
-      }
-
-      // Update batch progress
-      const totalVials = itemsForCheckout.reduce((sum, item) => sum + item.quantity, 0);
-
-      // Get current batch progress
-      const { data: currentBatch, error: batchError } = await supabase
-        .from('group_buy_batches')
-        .select('current_vials')
-        .eq('id', batchId)
-        .single();
-
-      if (batchError) {
-        // Don't throw here, order is already created
+        // If we found an existing order, use it
+        if (!existingOrdersError && existingOrders && existingOrders.length > 0) {
+          existingOrder = existingOrders[0];
+          console.warn('✅ Found existing order to update:', existingOrder);
+        } else {
+          console.warn('❌ No existing order found, will create new order');
+        }
       } else {
-        // Update batch current_vials
-        const { error: updateError } = await supabase
-          .from('group_buy_batches')
+        console.warn('👤 User not logged in, creating new order');
+      }
+
+      if (existingOrder && userProfile?.id) {
+        // Update existing order - ONLY for logged-in users
+        console.warn('🔄 CONSOLIDATING order - updating existing order:', existingOrder.id);
+        isOrderUpdate = true;
+        orderCode = existingOrder.order_code;
+
+        // Get existing order items
+        const { data: existingOrderItems } = await supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', existingOrder.id);
+
+        // Create a map of existing items by product_id
+        const existingItemsMap = new Map();
+        existingOrderItems?.forEach((item) => {
+          existingItemsMap.set(item.product_id, item);
+        });
+
+        // Calculate total vials to add to batch progress
+        let totalVialsToAdd = 0;
+        const itemsToInsert = [];
+        const itemsToUpdate = [];
+
+        // Process new items
+        for (const item of itemsForCheckout) {
+          const existingItem = existingItemsMap.get(item.productId);
+
+          if (existingItem) {
+            // Update existing item quantity
+            const newQuantity = existingItem.quantity + item.quantity;
+            const newTotalPrice = newQuantity * item.price;
+
+            itemsToUpdate.push({
+              id: existingItem.id,
+              quantity: newQuantity,
+              total_price: newTotalPrice,
+            });
+
+            totalVialsToAdd += item.quantity;
+          } else {
+            // Insert new item
+            itemsToInsert.push({
+              order_id: existingOrder.id,
+              product_id: item.productId,
+              quantity: item.quantity,
+              price_per_vial: item.price,
+              total_price: item.price * item.quantity,
+            });
+
+            totalVialsToAdd += item.quantity;
+          }
+        }
+
+        // Update existing items
+        for (const itemUpdate of itemsToUpdate) {
+          await supabase
+            .from('order_items')
+            .update({
+              quantity: itemUpdate.quantity,
+              total_price: itemUpdate.total_price,
+            })
+            .eq('id', itemUpdate.id);
+        }
+
+        // Insert new items
+        if (itemsToInsert.length > 0) {
+          await supabase
+            .from('order_items')
+            .insert(itemsToInsert);
+        }
+
+        // Update order total
+        const newTotalAmount = existingOrder.total_amount + totalForCheckout;
+        const newSubtotal = (existingOrder.subtotal || 0) + totalForCheckout;
+        await supabase
+          .from('orders')
           .update({
-            current_vials: (currentBatch.current_vials || 0) + totalVials,
+            subtotal: newSubtotal,
+            total_amount: newTotalAmount,
+            customer_name: customerName.trim(),
+            whatsapp_number: whatsappNumber.trim(),
           })
-          .eq('id', batchId);
+          .eq('id', existingOrder.id);
 
-        if (updateError) {
-          // Don't throw here, order is already created
+        // Update batch progress
+        if (totalVialsToAdd > 0) {
+          // Get current batch progress
+          const { data: currentBatch } = await supabase
+            .from('group_buy_batches')
+            .select('current_vials')
+            .eq('id', batchId)
+            .single();
+
+          if (currentBatch) {
+            await supabase
+              .from('group_buy_batches')
+              .update({
+                current_vials: (currentBatch.current_vials || 0) + totalVialsToAdd,
+              })
+              .eq('id', batchId);
+          }
+
+          // Update individual product progress
+          for (const item of itemsForCheckout) {
+            await supabase
+              .rpc('increment_group_buy_product_vials', {
+                p_batch_id: batchId,
+                p_product_id: item.productId,
+                p_delta: item.quantity,
+              });
+          }
+        }
+      } else {
+        // Create new order - for both guest users and logged-in users without existing orders
+        console.warn('🆕 CREATING NEW ORDER - no existing order found');
+        const { data: orderCodeData, error: codeError } = await supabase
+          .rpc('generate_order_code');
+
+        if (codeError) {
+          throw codeError;
+        }
+
+        orderCode = orderCodeData;
+
+        // Create order with comprehensive details
+        const orderData = {
+          order_code: orderCode,
+          customer_name: customerName.trim(),
+          whatsapp_number: whatsappNumber.trim(),
+          batch_id: batchId,
+          subtotal: totalForCheckout,
+          shipping_cost: 0,
+          total_amount: totalForCheckout,
+          status: 'pending',
+          payment_status: 'pending',
+          // Only add user_id if user is logged in
+          ...(userProfile?.id && { user_id: userProfile.id }),
+        };
+
+        const { data: newOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert(orderData)
+          .select()
+          .single();
+
+        if (orderError) {
+          throw orderError;
+        }
+
+        order = newOrder;
+
+        // Create order items with detailed information
+        const orderItems = itemsForCheckout.map(item => ({
+          order_id: order.id,
+          product_id: item.productId,
+          quantity: item.quantity,
+          price_per_vial: item.price,
+          total_price: item.price * item.quantity,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) {
+          throw itemsError;
+        }
+
+        // Update batch progress
+        const totalVials = itemsForCheckout.reduce((sum, item) => sum + item.quantity, 0);
+
+        // Get current batch progress
+        const { data: currentBatch } = await supabase
+          .from('group_buy_batches')
+          .select('current_vials')
+          .eq('id', batchId)
+          .single();
+
+        if (currentBatch) {
+          await supabase
+            .from('group_buy_batches')
+            .update({
+              current_vials: (currentBatch.current_vials || 0) + totalVials,
+            })
+            .eq('id', batchId);
+        }
+
+        // Update individual product progress in group_buy_products via RPC
+        for (const item of itemsForCheckout) {
+          await supabase
+            .rpc('increment_group_buy_product_vials', {
+              p_batch_id: batchId,
+              p_product_id: item.productId,
+              p_delta: item.quantity,
+            });
         }
       }
 
-      // Update individual product progress in group_buy_products via RPC
-      for (const item of itemsForCheckout) {
-        const { error: productUpdateError } = await supabase
-          .rpc('increment_group_buy_product_vials', {
-            p_batch_id: batchId,
-            p_product_id: item.productId,
-            p_delta: item.quantity,
-          });
-
-        if (productUpdateError) {
-          // Don't throw here, order is already created
-        }
-      }
-
-      // Snapshot ordered items and total before clearing cart
+      // Set success state
       setOrderedItems(itemsForCheckout as OrderItem[]);
       setOrderedTotal(totalForCheckout);
+      setOrderCode(orderCode);
+      setOrderSuccess(true);
 
       // Clear group buy items from cart
       dispatch({ type: 'CLEAR_GROUP_BUY' });
 
-      setOrderCode(generatedOrderCode);
-      setOrderSuccess(true);
-
       // Wait for persistence confirmation before redirecting to WhatsApp
       try {
-        const orderId = order.id;
+        const orderId = isOrderUpdate && existingOrder ? existingOrder.id : order.id;
         const expectedItems = itemsForCheckout.length;
-        const persisted = await waitForPersistence(orderId, expectedItems);
-        if (!persisted) {
-          // Handle persistence failure if needed
-        }
+        await waitForPersistence(orderId, expectedItems);
+
         const orderSummaryLines = itemsForCheckout.map(item =>
           `• ${item.name}: ${item.quantity} vial(s) × ₱${item.price} = ₱${(item.price * item.quantity).toLocaleString()}`,
         );
         const orderSummaryText = orderSummaryLines.join('\n');
 
-        const message = `Hi! I'd like to place an order for the group buy batch "${batchName}".\n\n`
-          + `Order Code: ${generatedOrderCode}\n`
+        const message = `Hi! I'd like to ${isOrderUpdate ? 'update my existing order' : 'place an order'} for the group buy batch "${batchName}".\n\n`
+          + `Order Code: ${orderCode}\n`
           + `Customer: ${customerName}\n`
           + `WhatsApp: ${whatsappNumber}\n\n`
           + `Order Details:\n${orderSummaryText}\n\n`
@@ -254,19 +387,14 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onClose, 
           + `Please confirm my order and provide payment details. Thank you!`;
 
         const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/6391549012244?text=${encodedMessage}`;
+        const whatsappUrl = `https://wa.me/639154901224?text=${encodedMessage}`;
         window.open(whatsappUrl, '_blank');
-        onClose();
+        onCloseAction();
       } catch {
         // Silently ignore WhatsApp redirect errors
       }
     } catch (error) {
-      if (error && typeof error === 'object' && 'message' in error) {
-        // Handle error message if needed
-      }
-      if (error && typeof error === 'object' && 'code' in error) {
-        // Handle error code if needed
-      }
+      console.error('Error processing order:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -296,10 +424,10 @@ Total Amount: ₱${orderedTotal.toLocaleString()}
 Please confirm my order and provide payment details. Thank you!`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/6391549012244?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/639154901224?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
-    onClose();
+    onCloseAction();
   };
 
   const handleClose = () => {
@@ -310,7 +438,7 @@ Please confirm my order and provide payment details. Thank you!`;
     setOrderedItems([]);
     setOrderedTotal(0);
     setCheckoutItems([]);
-    onClose();
+    onCloseAction();
   };
 
   if (orderSuccess) {
@@ -319,19 +447,21 @@ Please confirm my order and provide payment details. Thank you!`;
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              Order Created Successfully!
+              <CheckCircle className="h-6 w-6 text-purple-600" />
+              {userProfile?.id ? 'Order Updated Successfully!' : 'Order Created Successfully!'}
             </DialogTitle>
             <DialogDescription>
-              Your order has been created and batch progress has been updated.
+              {userProfile?.id
+                ? 'Your order has been updated and batch progress has been updated.'
+                : 'Your order has been created and batch progress has been updated.'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
               <div className="text-center">
-                <div className="text-lg font-semibold text-green-800">Order Code</div>
-                <div className="text-2xl font-bold text-green-900">{orderCode}</div>
+                <div className="text-lg font-semibold text-purple-800">Order Code</div>
+                <div className="text-2xl font-bold text-purple-900">{orderCode}</div>
               </div>
             </div>
 
@@ -345,7 +475,9 @@ Please confirm my order and provide payment details. Thank you!`;
                 <span className="font-medium">{whatsappNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Total Amount:</span>
+                <span className="text-sm text-muted-foreground">
+                  {userProfile?.id ? 'Additional Amount:' : 'Total Amount:'}
+                </span>
                 <span className="font-bold">
                   ₱
                   {orderedTotal.toLocaleString()}
@@ -367,10 +499,20 @@ Please confirm my order and provide payment details. Thank you!`;
             <div className="flex gap-3">
               <Button
                 onClick={handleWhatsAppRedirect}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
               >
                 <Phone className="mr-2 h-4 w-4" />
                 Contact via WhatsApp
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="flex-1"
+              >
+                <Link href="/track-order">
+                  <Search className="mr-2 h-4 w-4" />
+                  Track Order
+                </Link>
               </Button>
               <Button variant="outline" onClick={handleClose}>
                 Close
@@ -432,7 +574,7 @@ Please confirm my order and provide payment details. Thank you!`;
               <div className="border-t pt-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">Total Amount:</span>
-                  <span className="text-lg font-bold text-green-600">
+                  <span className="text-lg font-bold text-purple-600">
                     ₱
                     {(
                       typeof prefillTotal === 'number'
@@ -520,13 +662,13 @@ Please confirm my order and provide payment details. Thank you!`;
                   ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating Order...
+                        Processing Order...
                       </>
                     )
                   : (
                       <>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Create Order
+                        {userProfile?.id ? 'Update Order' : 'Create Order'}
                       </>
                     )}
               </Button>

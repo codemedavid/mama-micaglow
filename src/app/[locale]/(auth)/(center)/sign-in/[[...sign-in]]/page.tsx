@@ -98,8 +98,8 @@ export default async function SignInPage(props: ISignInPageProps) {
                   </div>
 
                   <div className="flex items-center space-x-4 rounded-2xl border border-white/20 bg-white/60 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
-                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-100 to-green-200">
-                      <Shield className="h-7 w-7 text-green-600" />
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-purple-200">
+                      <Shield className="h-7 w-7 text-purple-600" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Secure & Trusted</h3>
@@ -145,7 +145,7 @@ export default async function SignInPage(props: ISignInPageProps) {
                       footerActionLink: 'text-purple-600 hover:text-purple-700 font-semibold transition-colors duration-200',
                       formFieldLabel: 'text-gray-700 font-semibold text-sm mb-2',
                       identityPreviewText: 'text-gray-600',
-                      formFieldSuccessText: 'text-green-600 text-sm',
+                      formFieldSuccessText: 'text-purple-600 text-sm',
                       formFieldErrorText: 'text-red-600 text-sm',
                       footerActionText: 'text-gray-600 text-sm',
                       formResendCodeLink: 'text-purple-600 hover:text-purple-700 font-semibold transition-colors duration-200',

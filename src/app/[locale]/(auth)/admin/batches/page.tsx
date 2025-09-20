@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +19,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CardImage } from '@/components/ui/OptimizedImage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRealtimeBatches } from '@/hooks/useRealtimeBatch';
 import { useRole } from '@/hooks/useRole';
 import { supabase } from '@/lib/supabase';
 
@@ -48,10 +49,11 @@ type Batch = {
   id: number;
   name: string;
   description: string | null;
-  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  status: 'draft' | 'active' | 'completed' | 'cancelled' | 'payment_collection' | 'ordering' | 'processing' | 'shipped' | 'delivered';
   target_vials: number;
   current_vials: number;
   discount_percentage: number;
+  shipping_fee: number;
   start_date: string;
   end_date: string;
   created_by: number;
@@ -62,7 +64,12 @@ type Batch = {
 
 const batchStatuses = [
   { value: 'draft', label: 'Draft', color: 'bg-gray-100 text-gray-800' },
-  { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800' },
+  { value: 'active', label: 'Active', color: 'bg-purple-100 text-purple-800' },
+  { value: 'payment_collection', label: 'Payment Collection', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'ordering', label: 'Ordering', color: 'bg-blue-100 text-blue-800' },
+  { value: 'processing', label: 'Processing', color: 'bg-purple-100 text-purple-800' },
+  { value: 'shipped', label: 'Shipped', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'delivered', label: 'Delivered', color: 'bg-green-100 text-green-800' },
   { value: 'completed', label: 'Completed', color: 'bg-blue-100 text-blue-800' },
   { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 ];
@@ -70,72 +77,18 @@ const batchStatuses = [
 export default function AdminBatchesPage() {
   const { isAdmin, loading: roleLoading } = useRole();
   const router = useRouter();
-  const [batches, setBatches] = useState<Batch[]>([]);
+  const { batches, loading, refetch: refetchBatches } = useRealtimeBatches();
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'draft' as 'draft' | 'active' | 'completed' | 'cancelled',
+    status: 'draft' as 'draft' | 'active' | 'completed' | 'cancelled' | 'payment_collection' | 'ordering' | 'processing' | 'shipped' | 'delivered',
+    shipping_fee: 0,
     products: [] as Array<{ product_id: number; target_vials: number; price_per_vial: number }>,
   });
-
-  const fetchBatches = async () => {
-    try {
-      // First, let's try a simple query to see if the table exists
-      const { data, error } = await supabase
-        .from('group_buy_batches')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        // If the main query fails, try to fetch without nested data
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('group_buy_batches')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (simpleError) {
-          setBatches([]);
-        } else {
-          setBatches(simpleData?.map(batch => ({ ...batch, batch_products: [] })) || []);
-        }
-      } else {
-        // If basic query works, try to fetch batch products separately
-        const batchIds = data?.map(batch => batch.id) || [];
-        let batchProducts: any[] = [];
-
-        if (batchIds.length > 0) {
-          const { data: productsData, error: productsError } = await supabase
-            .from('group_buy_products')
-            .select(`
-              *,
-              product:products(*)
-            `)
-            .in('batch_id', batchIds);
-
-          if (!productsError && productsData) {
-            batchProducts = productsData;
-          }
-        }
-
-        // Combine batches with their products
-        const batchesWithProducts = data?.map(batch => ({
-          ...batch,
-          batch_products: batchProducts.filter(bp => bp.batch_id === batch.id),
-        })) || [];
-
-        setBatches(batchesWithProducts);
-      }
-    } catch {
-      setBatches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchProducts = async () => {
     try {
@@ -162,6 +115,7 @@ export default function AdminBatchesPage() {
       name: '',
       description: '',
       status: 'draft',
+      shipping_fee: 0,
       products: [],
     });
   };
@@ -173,7 +127,6 @@ export default function AdminBatchesPage() {
     }
 
     if (isAdmin) {
-      fetchBatches();
       fetchProducts();
     }
   }, [isAdmin, roleLoading, router]);
@@ -230,6 +183,7 @@ export default function AdminBatchesPage() {
         description: formData.description || null,
         status: formData.status,
         discount_percentage: 0, // No discount by default
+        shipping_fee: formData.shipping_fee,
         start_date: new Date().toISOString(),
         end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
         created_by: createdByUserId,
@@ -239,16 +193,27 @@ export default function AdminBatchesPage() {
 
       let batchId: number;
 
-      // If setting status to 'active', deactivate all other active batches first
+      // If setting status to 'active', deactivate all other active admin batches first
+      // Only deactivate admin-created batches, not sub-group batches
       if (formData.status === 'active') {
-        const { error: deactivateError } = await supabase
-          .from('group_buy_batches')
-          .update({ status: 'draft' })
-          .eq('status', 'active')
-          .neq('id', editingBatch?.id || 0); // Exclude current batch if editing
+        // Get all admin user IDs
+        const { data: adminUsers } = await supabase
+          .from('users')
+          .select('id')
+          .eq('role', 'admin');
 
-        if (deactivateError) {
-          return;
+        if (adminUsers && adminUsers.length > 0) {
+          const adminIds = adminUsers.map(user => user.id);
+          const { error: deactivateError } = await supabase
+            .from('group_buy_batches')
+            .update({ status: 'draft' })
+            .eq('status', 'active')
+            .in('created_by', adminIds) // Only deactivate admin-created batches
+            .neq('id', editingBatch?.id || 0); // Exclude current batch if editing
+
+          if (deactivateError) {
+            return;
+          }
         }
       }
 
@@ -287,18 +252,16 @@ export default function AdminBatchesPage() {
       if (formData.products.length > 0) {
         // Filter out invalid products (product_id = 0 or target_vials = 0)
         const validProducts = formData.products.filter(p =>
-          p.product_id > 0 && p.target_vials > 0,
-          // && p.price_per_vial > 0 // Temporarily removed
+          p.product_id > 0 && p.target_vials > 0 && p.price_per_vial > 0,
         );
 
         if (validProducts.length > 0) {
-          // Temporarily remove price_per_vial to test if that's the issue
           const batchProducts = validProducts.map(p => ({
             batch_id: batchId,
             product_id: p.product_id,
             target_vials: p.target_vials,
             current_vials: 0,
-            // price_per_vial: p.price_per_vial // Commented out temporarily
+            price_per_vial: p.price_per_vial,
           }));
 
           const { error: productsError } = await supabase
@@ -311,7 +274,7 @@ export default function AdminBatchesPage() {
         }
       }
 
-      await fetchBatches();
+      await refetchBatches();
       handleDialogClose();
 
       // Show success message with info about active batch constraint
@@ -333,6 +296,7 @@ export default function AdminBatchesPage() {
       name: batch.name,
       description: batch.description || '',
       status: batch.status,
+      shipping_fee: batch.shipping_fee || 0,
       products: batch.batch_products?.map(bp => ({
         product_id: bp.product_id,
         target_vials: bp.target_vials,
@@ -364,7 +328,7 @@ export default function AdminBatchesPage() {
         return;
       }
 
-      await fetchBatches();
+      await refetchBatches();
     } catch {
       // Handle error if needed
     }
@@ -506,7 +470,7 @@ export default function AdminBatchesPage() {
                             {batchStatuses.map(status => (
                               <SelectItem key={status.value} value={status.value}>
                                 <div className="flex items-center space-x-2">
-                                  <div className={`h-2 w-2 rounded-full ${status.value === 'active' ? 'bg-green-500' : status.value === 'completed' ? 'bg-blue-500' : status.value === 'cancelled' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
+                                  <div className={`h-2 w-2 rounded-full ${status.value === 'active' ? 'bg-purple-500' : status.value === 'completed' ? 'bg-blue-500' : status.value === 'cancelled' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
                                   <span>{status.label}</span>
                                 </div>
                               </SelectItem>
@@ -527,13 +491,33 @@ export default function AdminBatchesPage() {
                         className="resize-none border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                       />
                     </div>
+
+                    <div className="mt-8 space-y-2">
+                      <Label htmlFor="shipping_fee" className="flex items-center text-sm font-medium text-gray-700">
+                        <span>Shipping Fee (₱)</span>
+                        <span className="ml-1 text-xs text-gray-500">(Total fee to be split among orders)</span>
+                      </Label>
+                      <Input
+                        id="shipping_fee"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.shipping_fee}
+                        onChange={e => setFormData(prev => ({ ...prev, shipping_fee: Number.parseFloat(e.target.value) || 0 }))}
+                        placeholder="0.00"
+                        className="h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      />
+                      <p className="text-xs text-gray-500">
+                        This amount will be automatically split equally among all orders when the batch enters payment collection phase.
+                      </p>
+                    </div>
                   </div>
 
                   {/* Available Products Section */}
                   <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
                     <div className="mb-6 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-600">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600">
                           <Package className="h-5 w-5 text-white" />
                         </div>
                         <div>
@@ -557,7 +541,7 @@ export default function AdminBatchesPage() {
                             className={`group flex cursor-pointer items-center space-x-4 rounded-xl border-2 p-5 transition-all duration-200 ${
                               isAlreadyAdded
                                 ? 'border-gray-200 bg-gray-50 opacity-75'
-                                : 'border-gray-200 bg-white hover:border-green-300 hover:bg-green-50 hover:shadow-md'
+                                : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50 hover:shadow-md'
                             }`}
                             onClick={() => {
                               if (!isAlreadyAdded) {
@@ -579,21 +563,20 @@ export default function AdminBatchesPage() {
                             <div className="relative flex-shrink-0">
                               {product.image_url
                                 ? (
-                                    <Image
+                                    <CardImage
                                       src={product.image_url}
                                       alt={product.name}
-                                      className="h-14 w-14 rounded-xl object-cover shadow-sm"
-                                      width={56}
-                                      height={56}
+                                      size="medium"
+                                      className="rounded-xl shadow-sm"
                                     />
                                   )
                                 : (
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-xl font-bold text-white shadow-sm">
+                                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-xl font-bold text-white shadow-sm">
                                       {product.name.charAt(0)}
                                     </div>
                                   )}
                               {isAlreadyAdded && (
-                                <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
+                                <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500">
                                   <CheckCircle className="h-3 w-3 text-white" />
                                 </div>
                               )}
@@ -611,7 +594,7 @@ export default function AdminBatchesPage() {
                             {/* Price and Action */}
                             <div className="flex items-center space-x-4">
                               <div className="text-right">
-                                <p className="text-lg font-bold text-green-600">
+                                <p className="text-lg font-bold text-purple-600">
                                   ₱
                                   {product.price_per_vial}
                                 </p>
@@ -620,7 +603,7 @@ export default function AdminBatchesPage() {
 
                               {isAlreadyAdded
                                 ? (
-                                    <div className="flex items-center space-x-2 rounded-lg bg-green-100 px-3 py-2 text-green-700">
+                                    <div className="flex items-center space-x-2 rounded-lg bg-purple-100 px-3 py-2 text-purple-700">
                                       <CheckCircle className="h-4 w-4" />
                                       <span className="text-sm font-medium">Added</span>
                                     </div>
@@ -629,7 +612,7 @@ export default function AdminBatchesPage() {
                                     <Button
                                       type="button"
                                       size="sm"
-                                      className="rounded-lg bg-green-600 px-4 py-2 text-white shadow-sm hover:bg-green-700"
+                                      className="rounded-lg bg-purple-600 px-4 py-2 text-white shadow-sm hover:bg-purple-700"
                                     >
                                       <Plus className="mr-2 h-4 w-4" />
                                       Add to Batch
@@ -722,7 +705,7 @@ export default function AdminBatchesPage() {
                                               <div className="flex items-center space-x-3">
                                                 {p.image_url
                                                   ? (
-                                                      <Image src={p.image_url} alt={p.name} className="h-8 w-8 rounded-lg object-cover" width={32} height={32} />
+                                                      <CardImage src={p.image_url} alt={p.name} size="small" />
                                                     )
                                                   : (
                                                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-sm font-bold text-white">
@@ -849,11 +832,20 @@ export default function AdminBatchesPage() {
           {batches.map(batch => (
             <Card
               key={batch.id}
-              className={`group border-0 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+              className={`group cursor-pointer border-0 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
                 batch.status === 'active'
-                  ? 'border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50'
+                  ? 'border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-purple-50'
                   : 'bg-white/80'
               }`}
+              onClick={() => router.push(`/admin/batches/${batch.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push(`/admin/batches/${batch.id}`);
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -870,7 +862,7 @@ export default function AdminBatchesPage() {
                             <span className="ml-1">{batchStatuses.find(s => s.value === batch.status)?.label}</span>
                           </Badge>
                           {batch.status === 'active' && (
-                            <Badge className="animate-pulse bg-green-500 px-2 py-1 text-xs text-white">
+                            <Badge className="animate-pulse bg-purple-500 px-2 py-1 text-xs text-white">
                               LIVE
                             </Badge>
                           )}
@@ -882,7 +874,10 @@ export default function AdminBatchesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleEdit(batch)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(batch);
+                      }}
                       className="opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <Edit className="h-4 w-4" />
@@ -890,7 +885,10 @@ export default function AdminBatchesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDelete(batch.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(batch.id);
+                      }}
                       className="text-red-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -947,6 +945,19 @@ export default function AdminBatchesPage() {
                           {batch.target_vials}
                           {' '}
                           vials
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Shipping Fee:</span>
+                        <span className="ml-1 font-semibold">
+                          ₱
+                          {batch.shipping_fee?.toLocaleString() || '0.00'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Status:</span>
+                        <span className="ml-1 font-semibold">
+                          {batchStatuses.find(s => s.value === batch.status)?.label}
                         </span>
                       </div>
                     </div>

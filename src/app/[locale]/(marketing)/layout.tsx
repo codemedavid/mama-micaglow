@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { FloatingCart } from '@/components/cart/FloatingCart';
 import { Footer } from '@/components/layout/Footer';
 import { Navigation } from '@/components/layout/Navigation';
 import { CartProvider } from '@/contexts/CartContext';
@@ -21,6 +22,7 @@ export default function MarketingLayout({
         <main className="flex-1">
           {children}
         </main>
+        <FloatingCart />
         <Footer />
       </div>
     </CartProvider>

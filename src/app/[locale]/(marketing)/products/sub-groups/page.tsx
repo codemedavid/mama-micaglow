@@ -1,449 +1,251 @@
 'use client';
+
 import {
+  AlertCircle,
   ArrowRight,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Crown,
-  Filter,
   MapPin,
-  MessageCircle,
-  Search,
+  Package,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRealtimeRegions } from '@/hooks/useRealtimeSubGroupBatch';
 
-// Mock data for regional sub-groups
-const regions = [
-  'All Regions',
-  'Metro Manila',
-  'Luzon',
-  'Visayas',
-  'Mindanao',
-  'Cebu',
-  'Davao',
-  'Iloilo',
-  'Baguio',
-  'Cagayan de Oro',
-];
-
-const subGroups = [
-  {
-    id: '1',
-    name: 'Manila Peptide Community',
-    region: 'Metro Manila',
-    host: {
-      name: 'Dr. Maria Santos',
-      avatar: '/api/placeholder/40/40',
-      rating: 4.9,
-      reviews: 45,
-    },
-    members: 156,
-    activeBatches: 3,
-    description: 'Largest peptide community in Metro Manila. Regular group buys and educational sessions.',
-    specialties: ['Healing', 'Recovery', 'Anti-Aging'],
-    lastActivity: '2 hours ago',
-    isActive: true,
-    joinFee: 0,
-  },
-  {
-    id: '2',
-    name: 'Cebu Research Group',
-    region: 'Cebu',
-    host: {
-      name: 'Prof. Juan Dela Cruz',
-      avatar: '/api/placeholder/40/40',
-      rating: 4.8,
-      reviews: 32,
-    },
-    members: 89,
-    activeBatches: 2,
-    description: 'Research-focused group specializing in growth peptides and recovery compounds.',
-    specialties: ['Growth', 'Research', 'Recovery'],
-    lastActivity: '1 day ago',
-    isActive: true,
-    joinFee: 0,
-  },
-  {
-    id: '3',
-    name: 'Davao Wellness Circle',
-    region: 'Davao',
-    host: {
-      name: 'Sarah Johnson',
-      avatar: '/api/placeholder/40/40',
-      rating: 4.7,
-      reviews: 28,
-    },
-    members: 67,
-    activeBatches: 1,
-    description: 'Wellness-focused community emphasizing anti-aging and cosmetic peptides.',
-    specialties: ['Anti-Aging', 'Cosmetic', 'Wellness'],
-    lastActivity: '3 days ago',
-    isActive: true,
-    joinFee: 0,
-  },
-  {
-    id: '4',
-    name: 'Iloilo Peptide Hub',
-    region: 'Iloilo',
-    host: {
-      name: 'Dr. Roberto Garcia',
-      avatar: '/api/placeholder/40/40',
-      rating: 4.6,
-      reviews: 19,
-    },
-    members: 43,
-    activeBatches: 0,
-    description: 'Growing community in Iloilo with focus on healing and recovery peptides.',
-    specialties: ['Healing', 'Recovery'],
-    lastActivity: '1 week ago',
-    isActive: false,
-    joinFee: 0,
-  },
-  {
-    id: '5',
-    name: 'Baguio Mountain Peptides',
-    region: 'Baguio',
-    host: {
-      name: 'Lisa Chen',
-      avatar: '/api/placeholder/40/40',
-      rating: 4.9,
-      reviews: 15,
-    },
-    members: 34,
-    activeBatches: 1,
-    description: 'Small but active community in Baguio with regular group purchases.',
-    specialties: ['Healing', 'Growth'],
-    lastActivity: '5 hours ago',
-    isActive: true,
-    joinFee: 0,
-  },
-  {
-    id: '6',
-    name: 'CDO Research Network',
-    region: 'Cagayan de Oro',
-    host: {
-      name: 'Dr. Michael Torres',
-      avatar: '/api/placeholder/40/40',
-      rating: 4.8,
-      reviews: 22,
-    },
-    members: 78,
-    activeBatches: 2,
-    description: 'Professional research network with emphasis on clinical-grade peptides.',
-    specialties: ['Research', 'Clinical', 'Growth'],
-    lastActivity: '1 day ago',
-    isActive: true,
-    joinFee: 0,
-  },
-];
+// Remove the local Region type since we're using the one from the hook
 
 export default function SubGroupsPage() {
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { regions, loading } = useRealtimeRegions();
 
-  const filteredGroups = subGroups.filter((group) => {
-    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase())
-      || group.description.toLowerCase().includes(searchTerm.toLowerCase())
-      || group.region.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRegion = selectedRegion === 'all' || group.region.toLowerCase() === selectedRegion.toLowerCase();
-    return matchesSearch && matchesRegion;
-  });
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <section className="bg-gradient-to-r from-purple-600 to-purple-800 py-16 text-white">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center">
-            <Badge className="mb-4 border-white/30 bg-white/20 text-white">
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4 py-20">
+          <div className="mb-16 text-center">
+            <Badge className="mb-4 border-blue-200 bg-blue-100 text-blue-800">
               <MapPin className="mr-1 h-3 w-3" />
-              Regional Sub-Groups
+              Loading Regions...
             </Badge>
-            <h1 className="mb-4 text-4xl font-bold md:text-5xl">
-              Find Local Peptide Communities
+            <h1 className="mb-4 text-3xl font-bold md:text-4xl">
+              Regional Sub-Groups
             </h1>
-            <p className="mb-8 text-xl opacity-90">
-              Connect with regional hosts and join local group purchases.
-              Get better prices and build relationships with fellow peptide enthusiasts in your area.
-            </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
-                <MapPin className="mr-2 h-5 w-5" />
-                Find My Region
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600">
-                <Crown className="mr-2 h-5 w-5" />
-                Become a Host
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="bg-muted/30 py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold">How Regional Sub-Groups Work</h2>
             <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-              Join local communities led by trusted regional hosts
+              Fetching regional groups and active batches...
             </p>
           </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div className="text-center">
-              <div className="gradient-purple mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <MapPin className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Find Your Region</h3>
-              <p className="text-muted-foreground">
-                Browse sub-groups in your area or nearby regions
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="gradient-purple mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Join a Community</h3>
-              <p className="text-muted-foreground">
-                Connect with local hosts and fellow peptide enthusiasts
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="gradient-purple mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <Crown className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Group Purchases</h3>
-              <p className="text-muted-foreground">
-                Participate in local group buys organized by regional hosts
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Search and Filters */}
-      <section className="border-b py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="flex flex-1 flex-col gap-4 sm:flex-row">
-              <div className="relative max-w-md flex-1">
-                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-                <Input
-                  placeholder="Search sub-groups..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Region" />
-                </SelectTrigger>
-                <SelectContent>
-                  {regions.map(region => (
-                    <SelectItem key={region} value={region.toLowerCase()}>
-                      {region}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {filteredGroups.length}
-              {' '}
-              sub-groups found
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sub-Groups Grid */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredGroups.map(group => (
-              <Card key={group.id} className="group transition-shadow hover:shadow-lg">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Card key={i} className="animate-pulse">
+                <div className="aspect-video rounded-t-lg bg-gray-200"></div>
                 <CardHeader>
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="mb-1 text-lg">{group.name}</CardTitle>
-                      <div className="mb-2 flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">{group.region}</span>
-                        {group.isActive
-                          ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="mr-1 h-3 w-3" />
-                                Active
-                              </Badge>
-                            )
-                          : (
-                              <Badge variant="secondary">
-                                <Clock className="mr-1 h-3 w-3" />
-                                Inactive
-                              </Badge>
-                            )}
-                      </div>
-                    </div>
-                    {group.joinFee > 0 && (
-                      <Badge variant="outline" className="border-orange-600 text-orange-600">
-                        ₱
-                        {group.joinFee}
-                        {' '}
-                        fee
-                      </Badge>
-                    )}
-                  </div>
-
-                  <CardDescription className="mb-4">
-                    {group.description}
-                  </CardDescription>
-
-                  {/* Host Info */}
-                  <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                      <Crown className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">Host</p>
-                      <p className="text-sm font-medium">{group.host.name}</p>
-                      <div className="flex items-center gap-1">
-
-                      </div>
-                    </div>
-                  </div>
+                  <div className="h-4 w-3/4 rounded bg-gray-200"></div>
+                  <div className="h-3 w-1/2 rounded bg-gray-200"></div>
                 </CardHeader>
-
                 <CardContent>
-                  <div className="space-y-4">
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="rounded-lg bg-muted/50 p-3">
-                        <p className="text-2xl font-bold text-primary">{group.members}</p>
-                        <p className="text-xs text-muted-foreground">Members</p>
-                      </div>
-                      <div className="rounded-lg bg-muted/50 p-3">
-                        <p className="text-2xl font-bold text-primary">{group.activeBatches}</p>
-                        <p className="text-xs text-muted-foreground">Active Batches</p>
-                      </div>
-                    </div>
-
-                    {/* Specialties */}
-
-                    {/* Pricing Info */}
-
-                    {/* Last Activity */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        Last activity:
-                        {group.lastActivity}
-                      </span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        className="flex-1"
-                        disabled={!group.isActive}
-                      >
-                        <Users className="mr-2 h-4 w-4" />
-                        {group.isActive ? 'Join Group' : 'Request to Join'}
-                      </Button>
-                      <Button variant="outline" size="icon">
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded bg-gray-200"></div>
+                    <div className="h-3 w-2/3 rounded bg-gray-200"></div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-      </section>
+      </div>
+    );
+  }
 
-      {/* Become a Host Section */}
-      <section className="bg-muted/30 py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold">Become a Regional Host</h2>
+  if (regions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4 py-20">
+          <div className="mb-16 text-center">
+            <Badge className="mb-4 border-gray-200 bg-gray-100 text-gray-800">
+              <AlertCircle className="mr-1 h-3 w-3" />
+              No Active Regions
+            </Badge>
+            <h1 className="mb-4 text-3xl font-bold md:text-4xl">
+              No Regional Groups Available
+            </h1>
             <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-              Lead your local peptide community and help others access better prices
+              There are currently no active regional groups. Check back soon for new communities!
             </p>
           </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="text-center">
-              <div className="gradient-purple mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <Crown className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Lead Your Community</h3>
-              <p className="text-sm text-muted-foreground">
-                Organize group purchases and build relationships with local peptide enthusiasts
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="gradient-purple mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Earn Host Benefits</h3>
-              <p className="text-sm text-muted-foreground">
-                Get special discounts and early access to new products as a regional host
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="gradient-purple mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">Flexible Schedule</h3>
-              <p className="text-sm text-muted-foreground">
-                Organize group buys on your own schedule and manage your community
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <Button size="lg" className="gradient-purple text-white hover:opacity-90">
-              <Crown className="mr-2 h-5 w-5" />
-              Apply to Become a Host
-            </Button>
+          <div className="mx-auto max-w-4xl">
+            <Card className="border-gray-200 shadow-lg">
+              <CardContent className="p-8 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                  <MapPin className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold text-gray-900">No Regional Groups</h3>
+                <p className="mb-6 text-gray-600">New regional groups will appear here when they become available.</p>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/products">
+                    <Package className="mr-2 h-5 w-5" />
+                    Browse Individual Products
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </section>
+      </div>
+    );
+  }
 
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-purple-600 to-purple-800 py-16 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-3xl font-bold">
-            Ready to Join a Local Community?
-          </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-xl opacity-90">
-            Connect with regional hosts and start participating in local group purchases today
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="container mx-auto px-4 py-20">
+        <div className="mb-16 text-center">
+          <Badge className="mb-4 border-blue-200 bg-blue-100 text-blue-800">
+            <MapPin className="mr-1 h-3 w-3" />
+            Regional Sub-Groups
+          </Badge>
+          <h1 className="mb-4 text-3xl font-bold md:text-4xl">
+            Find Local Peptide Communities
+          </h1>
+          <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+            Connect with regional hosts for the best prices. Click on an area to see available products.
           </p>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
-              <MapPin className="mr-2 h-5 w-5" />
-              Browse All Groups
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600">
-              <ArrowRight className="mr-2 h-5 w-5" />
-              Learn More
-            </Button>
-          </div>
         </div>
-      </section>
+
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {regions.map((region) => {
+            const hasActiveBatch = region.active_batch && region.active_batch.status === 'active';
+            const progressPercentage = hasActiveBatch
+              ? Math.round((region.active_batch!.current_vials / region.active_batch!.target_vials) * 100)
+              : 0;
+
+            return (
+              <Link key={region.id} href={`/products/sub-groups/${region.id}`}>
+                <Card className="group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-200">
+                      <MapPin className="h-16 w-16 text-blue-400" />
+                    </div>
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-blue-100 text-blue-800">{region.city}</Badge>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-purple-100 text-purple-800">
+                        {hasActiveBatch ? 'Active Batch' : 'No Active Batch'}
+                      </Badge>
+                    </div>
+                    {hasActiveBatch && (
+                      <div className="absolute right-2 bottom-2 left-2">
+                        <div className="rounded-full bg-white/90 p-1">
+                          <div className="h-2 w-full rounded-full bg-blue-200">
+                            <div
+                              className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300"
+                              style={{ width: `${progressPercentage}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-1 text-center text-xs font-medium text-gray-700">
+                          {progressPercentage}
+                          % Complete
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{region.name}</CardTitle>
+                    <CardDescription>
+                      {region.city}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {hasActiveBatch
+                        ? (
+                            <>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Active Batch:</span>
+                                  <span className="font-semibold text-purple-600">{region.active_batch!.name}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span>Progress:</span>
+                                  <span className="font-semibold">
+                                    {region.active_batch!.current_vials}
+                                    /
+                                    {region.active_batch!.target_vials}
+                                    {' '}
+                                    vials
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-xs text-gray-600">
+                                    <span>Progress</span>
+                                    <span>
+                                      {Math.round((region.active_batch!.current_vials / region.active_batch!.target_vials) * 100)}
+                                      %
+                                    </span>
+                                  </div>
+                                  <div className="h-2 w-full rounded-full bg-gray-200">
+                                    <div
+                                      className="h-2 rounded-full bg-purple-600 transition-all duration-300"
+                                      style={{ width: `${Math.round((region.active_batch!.current_vials / region.active_batch!.target_vials) * 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="pt-2">
+                                <Button size="sm" className="w-full bg-purple-600 text-white hover:bg-purple-700">
+                                  <Users className="mr-2 h-4 w-4" />
+                                  Join Group Buy
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                            </>
+                          )
+                        : (
+                            <>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Status:</span>
+                                  <span className="font-semibold text-gray-500">No Active Batch</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span>Host:</span>
+                                  <span className="font-semibold">
+                                    {region.host ? `${region.host.first_name || ''} ${region.host.last_name || ''}`.trim() : 'Unassigned'}
+                                  </span>
+                                </div>
+                                {region.whatsapp_number && (
+                                  <div className="flex justify-between text-sm">
+                                    <span>Contact:</span>
+                                    <span className="font-semibold text-green-600">{region.whatsapp_number}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="pt-2">
+                                <Button size="sm" variant="outline" className="w-full">
+                                  <MapPin className="mr-2 h-4 w-4" />
+                                  View Region
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-12 text-center">
+          <Button size="lg" asChild>
+            <Link href="/">
+              <ArrowRight className="mr-2 h-5 w-5" />
+              Back to Home
+            </Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -100,6 +100,7 @@ export type Database = {
           target_vials: number;
           current_vials: number;
           discount_percentage: number;
+          shipping_fee: number;
           start_date: string;
           end_date: string;
           created_by: number;
@@ -114,6 +115,7 @@ export type Database = {
           target_vials: number;
           current_vials?: number;
           discount_percentage?: number;
+          shipping_fee?: number;
           start_date: string;
           end_date: string;
           created_by: number;
@@ -128,6 +130,7 @@ export type Database = {
           target_vials?: number;
           current_vials?: number;
           discount_percentage?: number;
+          shipping_fee?: number;
           start_date?: string;
           end_date?: string;
           created_by?: number;
@@ -173,6 +176,7 @@ export type Database = {
           city: string;
           host_id: number;
           join_fee: number;
+          whatsapp_number: string | null;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -185,6 +189,7 @@ export type Database = {
           city: string;
           host_id: number;
           join_fee?: number;
+          whatsapp_number?: string | null;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -197,6 +202,7 @@ export type Database = {
           city?: string;
           host_id?: number;
           join_fee?: number;
+          whatsapp_number?: string | null;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -210,6 +216,8 @@ export type Database = {
           whatsapp_number: string;
           batch_id: number;
           status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          subtotal: number;
+          shipping_cost: number;
           total_amount: number;
           payment_status: 'pending' | 'paid' | 'refunded';
           created_at: string;
@@ -222,6 +230,8 @@ export type Database = {
           whatsapp_number: string;
           batch_id: number;
           status?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          subtotal?: number;
+          shipping_cost?: number;
           total_amount: number;
           payment_status?: 'pending' | 'paid' | 'refunded';
           created_at?: string;
@@ -234,6 +244,8 @@ export type Database = {
           whatsapp_number?: string;
           batch_id?: number;
           status?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          subtotal?: number;
+          shipping_cost?: number;
           total_amount?: number;
           payment_status?: 'pending' | 'paid' | 'refunded';
           created_at?: string;
@@ -267,6 +279,188 @@ export type Database = {
           price_per_vial?: number;
           total_price?: number;
           created_at?: string;
+        };
+      };
+      individual_orders: {
+        Row: {
+          id: number;
+          order_code: string;
+          customer_name: string;
+          customer_email: string | null;
+          customer_phone: string;
+          shipping_address: string;
+          shipping_city: string;
+          shipping_province: string;
+          shipping_zip_code: string | null;
+          status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          payment_status: 'pending' | 'paid' | 'refunded';
+          subtotal: number;
+          shipping_cost: number;
+          total_amount: number;
+          user_id: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          order_code: string;
+          customer_name: string;
+          customer_email?: string | null;
+          customer_phone: string;
+          shipping_address: string;
+          shipping_city: string;
+          shipping_province: string;
+          shipping_zip_code?: string | null;
+          status?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          payment_status?: 'pending' | 'paid' | 'refunded';
+          subtotal: number;
+          shipping_cost?: number;
+          total_amount: number;
+          user_id?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          order_code?: string;
+          customer_name?: string;
+          customer_email?: string | null;
+          customer_phone?: string;
+          shipping_address?: string;
+          shipping_city?: string;
+          shipping_province?: string;
+          shipping_zip_code?: string | null;
+          status?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          payment_status?: 'pending' | 'paid' | 'refunded';
+          subtotal?: number;
+          shipping_cost?: number;
+          total_amount?: number;
+          user_id?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      individual_order_items: {
+        Row: {
+          id: number;
+          order_id: number;
+          product_id: number;
+          quantity: number;
+          price_per_box: number;
+          total_price: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          order_id: number;
+          product_id: number;
+          quantity: number;
+          price_per_box: number;
+          total_price: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          order_id?: number;
+          product_id?: number;
+          quantity?: number;
+          price_per_box?: number;
+          total_price?: number;
+          created_at?: string;
+        };
+      };
+      sub_group_batches: {
+        Row: {
+          id: number;
+          name: string;
+          description: string | null;
+          status: 'draft' | 'active' | 'completed' | 'cancelled' | 'payment_collection' | 'ordering' | 'processing' | 'shipped' | 'delivered';
+          target_vials: number;
+          current_vials: number;
+          discount_percentage: number;
+          shipping_fee: number;
+          start_date: string;
+          end_date: string;
+          host_id: number;
+          region_id: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          name: string;
+          description?: string | null;
+          status?: 'draft' | 'active' | 'completed' | 'cancelled' | 'payment_collection' | 'ordering' | 'processing' | 'shipped' | 'delivered';
+          target_vials: number;
+          current_vials?: number;
+          discount_percentage?: number;
+          shipping_fee?: number;
+          start_date: string;
+          end_date: string;
+          host_id: number;
+          region_id?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          name?: string;
+          description?: string | null;
+          status?: 'draft' | 'active' | 'completed' | 'cancelled' | 'payment_collection' | 'ordering' | 'processing' | 'shipped' | 'delivered';
+          target_vials?: number;
+          current_vials?: number;
+          discount_percentage?: number;
+          shipping_fee?: number;
+          start_date?: string;
+          end_date?: string;
+          host_id?: number;
+          region_id?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      sub_group_orders: {
+        Row: {
+          id: number;
+          order_code: string;
+          customer_name: string;
+          whatsapp_number: string;
+          batch_id: number;
+          status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          subtotal: number;
+          shipping_cost: number;
+          total_amount: number;
+          payment_status: 'pending' | 'paid' | 'refunded';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          order_code: string;
+          customer_name: string;
+          whatsapp_number: string;
+          batch_id: number;
+          status?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          subtotal?: number;
+          shipping_cost?: number;
+          total_amount: number;
+          payment_status?: 'pending' | 'paid' | 'refunded';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          order_code?: string;
+          customer_name?: string;
+          whatsapp_number?: string;
+          batch_id?: number;
+          status?: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+          subtotal?: number;
+          shipping_cost?: number;
+          total_amount?: number;
+          payment_status?: 'pending' | 'paid' | 'refunded';
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

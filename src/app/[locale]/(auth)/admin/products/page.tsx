@@ -8,7 +8,6 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -22,9 +21,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ImageUpload } from '@/components/ui/image-upload';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CardImage } from '@/components/ui/OptimizedImage';
 import {
   Select,
   SelectContent,
@@ -336,8 +336,9 @@ export default function AdminProductsPage() {
                 <div>
                   <Label htmlFor="image_url">Product Image</Label>
                   <ImageUpload
-                    value={formData.image_url || undefined}
-                    onChange={url => setFormData(prev => ({ ...prev, image_url: url || '' }))}
+                    currentImageUrl={formData.image_url || undefined}
+                    onImageUploadedAction={(url: string) => setFormData(prev => ({ ...prev, image_url: url }))}
+                    onImageRemovedAction={() => setFormData(prev => ({ ...prev, image_url: '' }))}
                     disabled={isSubmitting}
                   />
                   <p className="mt-2 text-xs text-gray-500">
@@ -379,15 +380,12 @@ export default function AdminProductsPage() {
                     <div className="mb-2 flex items-center space-x-3">
                       {product.image_url
                         ? (
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl">
-                              <Image
-                                src={product.image_url}
-                                alt={product.name}
-                                width={48}
-                                height={48}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
+                            <CardImage
+                              src={product.image_url}
+                              alt={product.name}
+                              size="small"
+                              className="rounded-xl"
+                            />
                           )
                         : (
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-lg font-bold text-white">
@@ -427,12 +425,11 @@ export default function AdminProductsPage() {
                   {/* Product Image Preview */}
                   {product.image_url && (
                     <div className="h-32 w-full overflow-hidden rounded-lg bg-gray-100">
-                      <Image
+                      <CardImage
                         src={product.image_url}
                         alt={product.name}
-                        width={128}
-                        height={128}
-                        className="h-full w-full object-cover"
+                        size="large"
+                        className="h-full w-full rounded-lg"
                       />
                     </div>
                   )}
@@ -444,9 +441,9 @@ export default function AdminProductsPage() {
                   )}
 
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between rounded-lg border border-green-200/50 bg-gradient-to-r from-green-50 to-emerald-50 p-3">
+                    <div className="flex items-center justify-between rounded-lg border border-purple-200/50 bg-gradient-to-r from-purple-50 to-purple-50 p-3">
                       <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <DollarSign className="h-4 w-4 text-purple-600" />
                         <span className="text-sm font-medium text-gray-900">
                           ₱
                           {product.price_per_vial}
@@ -455,7 +452,7 @@ export default function AdminProductsPage() {
                       </div>
                       <Badge
                         variant={product.is_active ? 'default' : 'secondary'}
-                        className={product.is_active ? 'border-green-200 bg-green-100 text-green-800' : ''}
+                        className={product.is_active ? 'border-purple-200 bg-purple-100 text-purple-800' : ''}
                       >
                         {product.is_active ? 'Active' : 'Inactive'}
                       </Badge>

@@ -2,7 +2,6 @@
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 import * as Sentry from '@sentry/nextjs';
-import * as Spotlight from '@spotlightjs/spotlight';
 
 if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
   Sentry.init({
@@ -35,8 +34,15 @@ if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
     debug: false,
   });
 
-  if (process.env.NODE_ENV === 'development') {
-    Spotlight.init();
+  if (process.env.NEXT_PUBLIC_SPOTLIGHT_ENABLED === 'true') {
+    // Dynamically import Spotlight only when explicitly enabled
+    import('@spotlightjs/spotlight')
+      .then((mod) => {
+        mod.init();
+      })
+      .catch(() => {
+        // If Spotlight isn't installed or fails to load, do nothing
+      });
   }
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useClerk, useUser } from '@clerk/nextjs';
 import {
   AlertCircle,
   ArrowLeft,
@@ -7,12 +8,15 @@ import {
   Bell,
   Home,
   Layers,
+  LogOut,
   Menu,
   Package,
   Plus,
   Search,
   Settings,
   Shield,
+  ShoppingCart,
+  User,
   Users,
   X,
 } from 'lucide-react';
@@ -21,6 +25,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useRole } from '@/hooks/useRole';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
@@ -31,6 +42,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isAdmin, loading } = useRole();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const pathname = usePathname();
   const [hasAdminUsers, setHasAdminUsers] = useState<boolean | null>(null);
@@ -40,6 +53,8 @@ export default function AdminLayout({
     { name: 'Overview', href: '/admin', icon: Home, current: pathname === '/admin' },
     { name: 'Products', href: '/admin/products', icon: Package, current: pathname.startsWith('/admin/products') },
     { name: 'Batches', href: '/admin/batches', icon: Layers, current: pathname.startsWith('/admin/batches') },
+    { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, current: pathname.startsWith('/admin/orders') },
+    { name: 'Regions', href: '/admin/regions', icon: Shield, current: pathname.startsWith('/admin/regions') },
     { name: 'Users', href: '/admin/users', icon: Users, current: pathname.startsWith('/admin/users') },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, current: pathname.startsWith('/admin/analytics') },
     { name: 'Settings', href: '/admin/settings', icon: Settings, current: pathname.startsWith('/admin/settings') },
@@ -153,8 +168,10 @@ export default function AdminLayout({
                   <Shield className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
-                  <p className="text-xs text-gray-500">Mama_MicaGlow</p>
+                  <Link href="/">
+                    <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
+                    <p className="text-xs text-gray-500">Mama_MicaGlow</p>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -227,15 +244,48 @@ export default function AdminLayout({
                     3
                   </Badge>
                 </Button>
-                <div className="flex items-center space-x-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-sm font-semibold text-white">
-                    A
-                  </div>
-                  <div className="hidden sm:block">
-                    <p className="text-sm font-medium text-gray-900">Admin User</p>
-                    <p className="text-xs text-gray-500">admin@mamamicalglow.com</p>
-                  </div>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-xs font-semibold text-white">
+                        {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress?.charAt(0) || 'A'}
+                      </div>
+                      <div className="hidden text-left sm:block">
+                        <p className="text-sm font-medium">{user?.firstName || 'Admin'}</p>
+                        <p className="text-xs text-muted-foreground">{user?.emailAddresses?.[0]?.emailAddress || 'admin@example.com'}</p>
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-medium">
+                        {user?.firstName}
+                        {' '}
+                        {user?.lastName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{user?.emailAddresses?.[0]?.emailAddress}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard?tab=profile" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="flex items-center">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>

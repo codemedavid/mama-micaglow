@@ -99,12 +99,73 @@ export const subGroupsSchema = pgTable('sub_groups', {
   description: text('description'),
   region: varchar('region', { length: 100 }).notNull(),
   city: varchar('city', { length: 100 }).notNull(),
-  hostId: integer('host_id').references(() => usersSchema.id).notNull(),
+  hostId: integer('host_id').references(() => usersSchema.id),
   joinFee: decimal('join_fee', { precision: 10, scale: 2 }).default('0').notNull(),
+  whatsappNumber: varchar('whatsapp_number', { length: 50 }),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+});
+
+// Sub-group batches
+export const subGroupBatchesSchema = pgTable('sub_group_batches', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  targetVials: integer('target_vials').notNull(),
+  currentVials: integer('current_vials').default(0).notNull(),
+  discountPercentage: decimal('discount_percentage', { precision: 5, scale: 2 }).default('20').notNull(),
+  startDate: timestamp('start_date', { mode: 'date' }).notNull(),
+  endDate: timestamp('end_date', { mode: 'date' }).notNull(),
+  hostId: integer('host_id').references(() => usersSchema.id).notNull(),
+  regionId: integer('region_id').references(() => subGroupsSchema.id),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+// Sub-group batch products
+export const subGroupBatchProductsSchema = pgTable('sub_group_batch_products', {
+  id: serial('id').primaryKey(),
+  batchId: integer('batch_id').references(() => subGroupBatchesSchema.id).notNull(),
+  productId: integer('product_id').references(() => productsSchema.id).notNull(),
+  targetVials: integer('target_vials').notNull(),
+  currentVials: integer('current_vials').default(0).notNull(),
+  pricePerVial: decimal('price_per_vial', { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Sub-group orders
+export const subGroupOrdersSchema = pgTable('sub_group_orders', {
+  id: serial('id').primaryKey(),
+  orderCode: varchar('order_code', { length: 50 }).unique().notNull(),
+  customerName: varchar('customer_name', { length: 255 }).notNull(),
+  whatsappNumber: varchar('whatsapp_number', { length: 50 }).notNull(),
+  batchId: integer('batch_id').references(() => subGroupBatchesSchema.id).notNull(),
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
+  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: varchar('payment_status', { length: 20 }).default('pending').notNull(),
+  userId: integer('user_id').references(() => usersSchema.id),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+// Sub-group order items
+export const subGroupOrderItemsSchema = pgTable('sub_group_order_items', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').references(() => subGroupOrdersSchema.id).notNull(),
+  productId: integer('product_id').references(() => productsSchema.id).notNull(),
+  quantity: integer('quantity').notNull(),
+  pricePerVial: decimal('price_per_vial', { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal('total_price', { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });

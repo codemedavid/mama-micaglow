@@ -152,15 +152,15 @@ export default function AdminSetupPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {message && (
-                <Alert className={messageType === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+                <Alert className={messageType === 'success' ? 'border-purple-200 bg-purple-50' : 'border-red-200 bg-red-50'}>
                   {messageType === 'success'
                     ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-purple-600" />
                       )
                     : (
                         <AlertCircle className="h-4 w-4 text-red-600" />
                       )}
-                  <AlertDescription className={messageType === 'success' ? 'text-green-800' : 'text-red-800'}>
+                  <AlertDescription className={messageType === 'success' ? 'text-purple-800' : 'text-red-800'}>
                     {message}
                   </AlertDescription>
                 </Alert>

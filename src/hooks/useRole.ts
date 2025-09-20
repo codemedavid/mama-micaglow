@@ -1,10 +1,9 @@
 'use client';
 
+import type { UserRole } from '@/types/UserRole';
 import { useUser } from '@clerk/nextjs';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-
-export type UserRole = 'admin' | 'host' | 'customer';
 
 type UserProfile = {
   id: number;
@@ -65,52 +64,54 @@ export function useRole() {
     }
   }, [user]);
 
+  const fetchUserProfile = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('clerk_id', user.id)
+        .single();
+
+      if (error) {
+        // If user profile doesn't exist, create one
+        if (error.code === 'PGRST116') {
+          const newProfile = await createUserProfile('customer');
+          if (newProfile) {
+            setUserProfile(newProfile);
+          } else {
+            setUserProfile(null);
+          }
+        } else {
+          setUserProfile(null);
+        }
+      } else {
+        setUserProfile(data);
+      }
+    } catch {
+      setUserProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, createUserProfile]);
+
   useEffect(() => {
     if (!isLoaded) {
       return;
     }
 
     if (!isSignedIn || !user) {
-      const resetState = () => {
-        setUserProfile(null);
-        setLoading(false);
-      };
-      resetState();
+      setUserProfile(null);
+      setLoading(false);
       return;
     }
 
-    const fetchUserProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('clerk_id', user.id)
-          .single();
-
-        if (error) {
-          // If user profile doesn't exist, create one
-          if (error.code === 'PGRST116') {
-            const newProfile = await createUserProfile('customer');
-            if (newProfile) {
-              setUserProfile(newProfile);
-            } else {
-              setUserProfile(null);
-            }
-          } else {
-            setUserProfile(null);
-          }
-        } else {
-          setUserProfile(data);
-        }
-      } catch {
-        setUserProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    setLoading(true);
     fetchUserProfile();
-  }, [user, isSignedIn, isLoaded, createUserProfile]);
+  }, [isLoaded, isSignedIn, user, fetchUserProfile]);
 
   const updateUserRole = async (newRole: UserRole) => {
     if (!userProfile) {
