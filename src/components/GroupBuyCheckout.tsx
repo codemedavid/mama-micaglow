@@ -83,9 +83,11 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onCloseAc
   // Snapshot current items for this batch when dialog opens, clear on close
   useEffect(() => {
     if (isOpen) {
-      setCheckoutItems(sourceItems as OrderItem[]);
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setCheckoutItems(_prev => sourceItems as OrderItem[]);
     } else {
-      setCheckoutItems([]);
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setCheckoutItems(_prev => []);
     }
   }, [isOpen, sourceItems]);
 

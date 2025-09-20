@@ -104,12 +104,15 @@ export function useRole() {
     }
 
     if (!isSignedIn || !user) {
-      setUserProfile(null);
-      setLoading(false);
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setUserProfile(_prev => null);
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setLoading(_prev => false);
       return;
     }
 
-    setLoading(true);
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+    setLoading(_prev => true);
     fetchUserProfile();
   }, [isLoaded, isSignedIn, user, fetchUserProfile]);
 

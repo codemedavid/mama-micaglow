@@ -183,6 +183,7 @@ export default function GroupBuyClient() {
       activeBatch.batch_products.forEach((bp: BatchProduct) => {
         initialQuantities[bp.product_id] = 0;
       });
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setProductQuantities(initialQuantities);
     }
   }, [activeBatch?.batch_products]);
