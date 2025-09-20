@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,7 +62,7 @@ type SubGroupBatch = {
   };
 };
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const { state, dispatch } = useCart();
   const { userProfile } = useRole();
   const searchParams = useSearchParams();
@@ -751,5 +751,13 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
