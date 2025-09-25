@@ -25,6 +25,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useRole } from '@/hooks/useRole';
@@ -208,6 +209,7 @@ export function Navigation() {
               side="right"
               className="w-[320px] border-l-0 bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/20 backdrop-blur-xl sm:w-[380px]"
             >
+              <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
               <div className="flex h-full flex-col">
                 {/* Header with Close Button */}
                 <div className="mb-8 flex items-center justify-between pt-2">
