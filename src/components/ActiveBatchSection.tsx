@@ -303,8 +303,9 @@ export default function ActiveBatchSection() {
               {activeBatch.batch_products && activeBatch.batch_products.length > 0
                 ? (
                     <>
+                      {/* Limited Products Display - Show only first 3 products */}
                       <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {activeBatch.batch_products.map((batchProduct) => {
+                        {activeBatch.batch_products.slice(0, 3).map((batchProduct) => {
                           const product = batchProduct.product;
                           const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials);
                           const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials);
@@ -350,6 +351,27 @@ export default function ActiveBatchSection() {
                           );
                         })}
                       </div>
+
+                      {/* Show "View All Products" button if there are more than 3 products */}
+                      {activeBatch.batch_products.length > 3 && (
+                        <div className="mb-6 text-center">
+                          <Button
+                            variant="outline"
+                            className="border-purple-300 text-purple-600 hover:bg-purple-50"
+                            asChild
+                          >
+                            <Link href={`/products/group-buy/${activeBatch.id}`}>
+                              <Package className="mr-2 h-4 w-4" />
+                              View All
+                              {' '}
+                              {activeBatch.batch_products.length}
+                              {' '}
+                              Products in This Batch
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
 
                       {/* User's Order Details */}
                       {userOrder && (

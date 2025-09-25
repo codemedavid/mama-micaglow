@@ -17,7 +17,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -703,7 +702,7 @@ export default function GroupBuyClient() {
                     <p className="text-lg text-gray-600">Choose from our premium peptide selection</p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {activeBatch.batch_products.map((batchProduct) => {
                       const product = batchProduct.product;
                       const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials, batchProduct.product_id);
@@ -713,90 +712,120 @@ export default function GroupBuyClient() {
                       const price = product?.price_per_vial || 0;
 
                       return (
-                        <div key={batchProduct.product_id} className="group relative overflow-hidden rounded-3xl bg-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                          {/* Product Image */}
-                          <div className="relative h-48 overflow-hidden">
-                            {product?.image_url
-                              ? (
-                                  <Image
-                                    src={product.image_url}
-                                    alt={product.name || 'Product'}
-                                    fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                )
-                              : (
-                                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600">
-                                    <div className="text-6xl font-bold text-white">
-                                      {(product?.name || 'P').charAt(0)}
+                        <div key={batchProduct.product_id} className="group relative">
+                          {/* Card Container with Modern Glass Effect */}
+                          <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:bg-white/90 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
+                            {/* Gradient Overlay */}
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-indigo-50/30" />
+
+                            {/* Product Image */}
+                            <div className="relative h-56 overflow-hidden">
+                              {product?.image_url
+                                ? (
+                                    <Image
+                                      src={product.image_url}
+                                      alt={product.name || 'Product'}
+                                      fill
+                                      className="object-cover transition-all duration-700 group-hover:scale-110"
+                                    />
+                                  )
+                                : (
+                                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600">
+                                      <div className="text-5xl font-bold text-white drop-shadow-lg">
+                                        {(product?.name || 'P').charAt(0)}
+                                      </div>
                                     </div>
+                                  )}
+
+                              {/* Gradient Overlay on Image */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+                              {/* Status Badge with Glass Effect */}
+                              <div className="absolute top-4 right-4">
+                                <div className={`${
+                                  remaining === 0
+                                    ? 'border-red-200 bg-red-500/20 text-red-700'
+                                    : remaining <= 2
+                                      ? 'border-orange-200 bg-orange-500/20 text-orange-700'
+                                      : 'border-emerald-200 bg-emerald-500/20 text-emerald-700'
+                                } rounded-full border px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-md`}
+                                >
+                                  {status.text}
+                                </div>
+                              </div>
+
+                              {/* Progress Overlay with Modern Design */}
+                              <div className="absolute right-0 bottom-0 left-0 p-6">
+                                <div className="mb-3 flex items-center justify-between text-white">
+                                  <span className="text-sm font-medium drop-shadow-sm">
+                                    {isPaymentPhase ? 'Paid Progress' : 'Progress'}
+                                  </span>
+                                  <span className="text-sm font-bold drop-shadow-sm">
+                                    {productProgress}
+                                    %
+                                  </span>
+                                </div>
+                                <div className="relative h-2 w-full rounded-full bg-white/20 backdrop-blur-sm">
+                                  <div
+                                    className="h-2 rounded-full bg-gradient-to-r from-white via-purple-200 to-indigo-200 shadow-lg transition-all duration-1000 ease-out"
+                                    style={{ width: `${productProgress}%` }}
+                                  />
+                                  <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Product Details */}
+                            <div className="relative p-6">
+                              <div className="mb-5">
+                                <h3 className="mb-3 line-clamp-2 text-xl leading-tight font-bold text-gray-900">
+                                  {product?.name || 'Unknown Product'}
+                                </h3>
+                                <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
+                                  {product?.category || 'Unknown Category'}
+                                </div>
+                              </div>
+
+                              {/* Price with Modern Styling */}
+                              <div className="mb-5 flex items-baseline gap-2">
+                                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-3xl font-bold text-transparent">
+                                  ₱
+                                  {price.toLocaleString()}
+                                </span>
+                                <span className="text-sm font-medium text-gray-500">per vial</span>
+                              </div>
+
+                              {/* Progress Stats with Modern Cards */}
+                              <div className="mb-6 grid grid-cols-2 gap-3">
+                                <div className="rounded-xl bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 backdrop-blur-sm">
+                                  <div className="mb-1 text-xs font-medium text-purple-600">
+                                    {isPaymentPhase ? 'Paid' : 'Purchased'}
                                   </div>
-                                )}
-
-                            {/* Status Badge */}
-                            <div className="absolute top-4 right-4">
-                              <Badge className={`${status.color} shadow-lg backdrop-blur-sm`}>
-                                {status.text}
-                              </Badge>
-                            </div>
-
-                            {/* Progress Overlay */}
-                            <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                              <div className="mb-2 flex items-center justify-between text-white">
-                                <span className="text-sm font-medium">
-                                  {isPaymentPhase ? 'Paid Progress' : 'Progress'}
-                                </span>
-                                <span className="text-sm font-bold">
-                                  {isPaymentPhase
-                                    ? `${paidVialsPerProduct[batchProduct.product_id] || 0}`
-                                    : `${batchProduct.current_vials}`}
-                                  /
-                                  {batchProduct.target_vials}
-                                </span>
+                                  <div className="text-lg font-bold text-purple-700">
+                                    {isPaymentPhase
+                                      ? `${paidVialsPerProduct[batchProduct.product_id] || 0}`
+                                      : `${batchProduct.current_vials}`}
+                                  </div>
+                                </div>
+                                <div className="rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 backdrop-blur-sm">
+                                  <div className="mb-1 text-xs font-medium text-indigo-600">Needed</div>
+                                  <div className="text-lg font-bold text-indigo-700">{batchProduct.target_vials}</div>
+                                </div>
                               </div>
-                              <div className="h-2 w-full rounded-full bg-white/20">
-                                <div
-                                  className="h-2 rounded-full bg-gradient-to-r from-white to-purple-200 transition-all duration-500"
-                                  style={{ width: `${productProgress}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
 
-                          {/* Product Details */}
-                          <div className="p-8">
-                            <div className="mb-4">
-                              <h3 className="mb-2 text-2xl font-bold text-gray-900">
-                                {product?.name || 'Unknown Product'}
-                              </h3>
-                              <p className="text-gray-600">
-                                {product?.category || 'Unknown Category'}
-                              </p>
-                            </div>
-
-                            {/* Price */}
-                            <div className="mb-6 flex items-baseline gap-2">
-                              <span className="text-3xl font-bold text-purple-600">
-                                ₱
-                                {price.toLocaleString()}
-                              </span>
-                              <span className="text-gray-500">per vial</span>
-                            </div>
-
-                            {/* Quantity Selector and Add to Cart - Only show during active phase */}
-                            {!isPaymentPhase && (
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor={`quantity-${batchProduct.product_id}`} className="mb-2 block text-sm font-medium text-gray-700">
+                              {/* Quantity Selector and Add to Cart - Only show during active phase */}
+                              {!isPaymentPhase && (
+                                <div className="space-y-4">
+                                  <Label htmlFor={`quantity-${batchProduct.product_id}`} className="block text-sm font-semibold text-gray-800">
                                     Quantity (vials)
                                   </Label>
-                                  <div className="flex items-center space-x-3">
+                                  <div className="flex items-center justify-center space-x-3">
                                     <Button
                                       variant="outline"
-                                      size="icon"
+                                      size="sm"
                                       onClick={() => updateQuantity(batchProduct.product_id, quantity - 1)}
                                       disabled={quantity <= 0}
-                                      className="h-10 w-10 rounded-full"
+                                      className="h-10 w-10 rounded-full border-2 transition-all duration-200 hover:border-purple-300 hover:bg-purple-50"
                                     >
                                       <Minus className="h-4 w-4" />
                                     </Button>
@@ -807,20 +836,20 @@ export default function GroupBuyClient() {
                                       max={remaining}
                                       value={quantity}
                                       onChange={e => updateQuantity(batchProduct.product_id, Number.parseInt(e.target.value) || 0)}
-                                      className="h-10 w-20 text-center font-semibold"
+                                      className="h-10 w-20 border-2 text-center text-sm font-semibold focus:border-purple-300 focus:ring-purple-200"
                                     />
                                     <Button
                                       variant="outline"
-                                      size="icon"
+                                      size="sm"
                                       onClick={() => updateQuantity(batchProduct.product_id, quantity + 1)}
                                       disabled={quantity >= remaining}
-                                      className="h-10 w-10 rounded-full"
+                                      className="h-10 w-10 rounded-full border-2 transition-all duration-200 hover:border-purple-300 hover:bg-purple-50"
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
                                   </div>
                                   {quantity > 0 && (
-                                    <div className="mt-2 text-center">
+                                    <div className="text-center">
                                       <span className="text-sm text-gray-600">Total: </span>
                                       <span className="text-lg font-bold text-purple-600">
                                         ₱
@@ -828,35 +857,35 @@ export default function GroupBuyClient() {
                                       </span>
                                     </div>
                                   )}
-                                </div>
 
-                                {/* Add to Cart Button */}
-                                <Button
-                                  className="h-12 w-full rounded-xl text-lg font-semibold"
-                                  onClick={() => addToCart(batchProduct)}
-                                  disabled={isOrderingLocked(activeBatch) || quantity <= 0 || remaining === 0}
-                                >
-                                  <ShoppingCart className="mr-2 h-5 w-5" />
-                                  {isOrderingLocked(activeBatch)
-                                    ? 'Orders Closed - Payment Phase'
-                                    : remaining === 0
-                                      ? 'Sold Out'
-                                      : `Add ${quantity} vial(s) to Cart`}
-                                </Button>
-                              </div>
-                            )}
+                                  {/* Add to Cart Button */}
+                                  <Button
+                                    className="h-12 w-full rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-semibold text-white shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-indigo-700 hover:shadow-xl"
+                                    onClick={() => addToCart(batchProduct)}
+                                    disabled={isOrderingLocked(activeBatch) || quantity <= 0 || remaining === 0}
+                                  >
+                                    <ShoppingCart className="mr-2 h-5 w-5" />
+                                    {isOrderingLocked(activeBatch)
+                                      ? 'Orders Closed'
+                                      : remaining === 0
+                                        ? 'Sold Out'
+                                        : `Add ${quantity} vial(s)`}
+                                  </Button>
+                                </div>
+                              )}
 
-                            {/* Payment Phase Message */}
-                            {isPaymentPhase && (
-                              <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
-                                <div className="text-lg font-semibold text-amber-800">
-                                  Orders Closed - Payment Phase
+                              {/* Payment Phase Message */}
+                              {isPaymentPhase && (
+                                <div className="rounded-2xl border border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-center backdrop-blur-sm">
+                                  <div className="mb-1 text-sm font-semibold text-amber-800">
+                                    Orders Closed - Payment Phase
+                                  </div>
+                                  <div className="text-xs text-amber-600">
+                                    Enter order code to view details
+                                  </div>
                                 </div>
-                                <div className="mt-2 text-sm text-amber-600">
-                                  Enter your order code above to view payment details
-                                </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

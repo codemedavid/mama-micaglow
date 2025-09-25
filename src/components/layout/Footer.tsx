@@ -37,7 +37,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/products/individual" className="text-muted-foreground hover:text-primary">
+                <Link href="/products" className="text-muted-foreground hover:text-primary">
                   Individual Purchase
                 </Link>
               </li>
@@ -49,11 +49,6 @@ export function Footer() {
               <li>
                 <Link href="/products/sub-groups" className="text-muted-foreground hover:text-primary">
                   Regional Sub-Groups
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-muted-foreground hover:text-primary">
-                  About Us
                 </Link>
               </li>
             </ul>

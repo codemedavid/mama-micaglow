@@ -666,134 +666,177 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
         )}
 
         {/* Products Grid */}
-        <div className={`mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2 ${isPaymentPhase && !isAuthorized && (!isSignedIn || !userOrder) ? 'pointer-events-none blur-[1px] select-none md:blur-[2px]' : ''}`}>
-          {batch.batch_products?.map((batchProduct: BatchProduct) => (
-            <Card key={batchProduct.product_id} className="group border-0 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
+        <div className={`mb-8 ${isPaymentPhase && !isAuthorized && (!isSignedIn || !userOrder) ? 'pointer-events-none blur-[1px] select-none md:blur-[2px]' : ''}`}>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {batch.batch_products?.map((batchProduct: BatchProduct) => (
+              <div key={batchProduct.product_id} className="group relative">
+                {/* Card Container with Modern Glass Effect */}
+                <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:bg-white/90 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
+                  {/* Gradient Overlay */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-indigo-50/30" />
+
+                  {/* Product Image Header */}
+                  <div className="relative h-56 overflow-hidden">
                     {batchProduct.product.image_url
                       ? (
-                          <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
-                            <Image
-                              src={batchProduct.product.image_url}
-                              alt={batchProduct.product.name}
-                              width={64}
-                              height={64}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
+                          <Image
+                            src={batchProduct.product.image_url}
+                            alt={batchProduct.product.name}
+                            fill
+                            className="object-cover transition-all duration-700 group-hover:scale-110"
+                          />
                         )
                       : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-xl font-bold text-white">
-                            {batchProduct.product.name.charAt(0)}
+                          <div className="flex h-full items-center justify-center bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600">
+                            <div className="text-5xl font-bold text-white drop-shadow-lg">
+                              {batchProduct.product.name.charAt(0)}
+                            </div>
                           </div>
                         )}
-                    <div>
-                      <CardTitle className="text-xl">{batchProduct.product.name}</CardTitle>
-                      <Badge variant="outline" className="mt-1">
-                        {batchProduct.product.category}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-purple-600">
-                      ₱
-                      {batchProduct.product.price_per_vial}
-                    </div>
-                    <div className="text-sm text-gray-500">per vial</div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {batchProduct.product.description && (
-                    <p className="text-sm text-gray-600">
-                      {batchProduct.product.description}
-                    </p>
-                  )}
 
-                  {/* Product Progress */}
-                  <div>
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        {isPaymentPhase ? 'Paid Progress' : 'Vials Progress'}
-                      </span>
-                      <span className="font-semibold">
-                        {getProgressPercentage(batchProduct)}
-                        %
-                      </span>
-                    </div>
-                    <Progress value={getProgressPercentage(batchProduct)} className="h-2" />
-                    <div className="mt-1 flex justify-between text-xs text-gray-500">
-                      <span>
-                        {isPaymentPhase
-                          ? `${paidVialsPerProduct[batchProduct.product_id] || 0} paid`
-                          : `${batchProduct.current_vials} purchased`}
-                      </span>
-                      <span>
-                        {batchProduct.target_vials}
-                        {' '}
-                        needed
-                      </span>
-                    </div>
-                  </div>
+                    {/* Gradient Overlay on Image */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-                  {/* Vial Ordering - Only show during active phase */}
-                  {!isPaymentPhase && (
-                    <div className="border-t pt-4">
-                      <Label className="text-sm font-medium">Order Vials</Label>
-                      <div className="mt-2 flex items-center space-x-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] as number || 0) - 1)}
-                          disabled={(vialOrders[batchProduct.product_id] || 0) <= 0}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          min="0"
-                          max={batchProduct.target_vials - batchProduct.current_vials}
-                          value={vialOrders[batchProduct.product_id] as number || 0}
-                          onChange={e => updateVialOrder(batchProduct.product_id, Number.parseInt(e.target.value as string) || 0)}
-                          className="w-20 text-center"
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] as number || 0) + 1)}
-                          disabled={(vialOrders[batchProduct.product_id] || 0) >= (batchProduct.target_vials - batchProduct.current_vials)}
-                        >
-                          <PlusIcon className="h-4 w-4" />
-                        </Button>
-                        <div className="text-sm text-gray-600">
-                          Max:
-                          {' '}
-                          {batchProduct.target_vials - batchProduct.current_vials}
-                        </div>
+                    {/* Status Badge with Glass Effect */}
+                    <div className="absolute top-4 right-4">
+                      <div className={`${
+                        (batchProduct.target_vials - batchProduct.current_vials) === 0
+                          ? 'border-red-200 bg-red-500/20 text-red-700'
+                          : (batchProduct.target_vials - batchProduct.current_vials) <= 2
+                              ? 'border-orange-200 bg-orange-500/20 text-orange-700'
+                              : 'border-emerald-200 bg-emerald-500/20 text-emerald-700'
+                      } rounded-full border px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-md`}
+                      >
+                        {(batchProduct.target_vials - batchProduct.current_vials) === 0
+                          ? 'Sold Out'
+                          : `${batchProduct.target_vials - batchProduct.current_vials} left`}
                       </div>
                     </div>
-                  )}
 
-                  {/* Payment Phase Message */}
-                  {isPaymentPhase && (
-                    <div className="border-t pt-4">
-                      <div className="rounded-lg bg-yellow-50 p-3 text-center">
-                        <div className="text-sm font-medium text-yellow-800">
+                    {/* Progress Overlay with Modern Design */}
+                    <div className="absolute right-0 bottom-0 left-0 p-6">
+                      <div className="mb-3 flex items-center justify-between text-white">
+                        <span className="text-sm font-medium drop-shadow-sm">
+                          {isPaymentPhase ? 'Paid Progress' : 'Progress'}
+                        </span>
+                        <span className="text-sm font-bold drop-shadow-sm">
+                          {getProgressPercentage(batchProduct)}
+                          %
+                        </span>
+                      </div>
+                      <div className="relative h-2 w-full rounded-full bg-white/20 backdrop-blur-sm">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-white via-purple-200 to-indigo-200 shadow-lg transition-all duration-1000 ease-out"
+                          style={{ width: `${getProgressPercentage(batchProduct)}%` }}
+                        />
+                        <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative p-6">
+                    {/* Product Info with Enhanced Typography */}
+                    <div className="mb-5">
+                      <CardTitle className="mb-3 line-clamp-2 text-xl leading-tight font-bold text-gray-900">
+                        {batchProduct.product.name}
+                      </CardTitle>
+                      <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
+                        {batchProduct.product.category}
+                      </div>
+                    </div>
+
+                    {/* Price with Modern Styling */}
+                    <div className="mb-5 flex items-baseline gap-2">
+                      <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-3xl font-bold text-transparent">
+                        ₱
+                        {batchProduct.product.price_per_vial.toLocaleString()}
+                      </span>
+                      <span className="text-sm font-medium text-gray-500">per vial</span>
+                    </div>
+
+                    {/* Description with Better Spacing */}
+                    {batchProduct.product.description && (
+                      <p className="mb-5 line-clamp-2 text-sm leading-relaxed text-gray-600">
+                        {batchProduct.product.description}
+                      </p>
+                    )}
+
+                    {/* Progress Stats with Modern Cards */}
+                    <div className="mb-6 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 backdrop-blur-sm">
+                        <div className="mb-1 text-xs font-medium text-purple-600">
+                          {isPaymentPhase ? 'Paid' : 'Purchased'}
+                        </div>
+                        <div className="text-lg font-bold text-purple-700">
+                          {isPaymentPhase
+                            ? `${paidVialsPerProduct[batchProduct.product_id] || 0}`
+                            : `${batchProduct.current_vials}`}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 backdrop-blur-sm">
+                        <div className="mb-1 text-xs font-medium text-indigo-600">Needed</div>
+                        <div className="text-lg font-bold text-indigo-700">{batchProduct.target_vials}</div>
+                      </div>
+                    </div>
+
+                    {/* Vial Ordering with Enhanced Design */}
+                    {!isPaymentPhase && (
+                      <div className="space-y-4">
+                        <Label className="text-sm font-semibold text-gray-800">Order Vials</Label>
+                        <div className="flex items-center justify-center space-x-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] as number || 0) - 1)}
+                            disabled={(vialOrders[batchProduct.product_id] || 0) <= 0}
+                            className="h-10 w-10 rounded-full border-2 transition-all duration-200 hover:border-purple-300 hover:bg-purple-50"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={batchProduct.target_vials - batchProduct.current_vials}
+                            value={vialOrders[batchProduct.product_id] as number || 0}
+                            onChange={e => updateVialOrder(batchProduct.product_id, Number.parseInt(e.target.value as string) || 0)}
+                            className="h-10 w-20 border-2 text-center text-sm font-semibold focus:border-purple-300 focus:ring-purple-200"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateVialOrder(batchProduct.product_id, (vialOrders[batchProduct.product_id] as number || 0) + 1)}
+                            disabled={(vialOrders[batchProduct.product_id] || 0) >= (batchProduct.target_vials - batchProduct.current_vials)}
+                            className="h-10 w-10 rounded-full border-2 transition-all duration-200 hover:border-purple-300 hover:bg-purple-50"
+                          >
+                            <PlusIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs font-medium text-gray-500">
+                            Max:
+                            {' '}
+                            {batchProduct.target_vials - batchProduct.current_vials}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payment Phase Message with Modern Design */}
+                    {isPaymentPhase && (
+                      <div className="rounded-2xl border border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-center backdrop-blur-sm">
+                        <div className="mb-1 text-sm font-semibold text-amber-800">
                           Orders Closed - Payment Phase
                         </div>
-                        <div className="mt-1 text-xs text-yellow-600">
-                          Enter your order code above to view payment details
+                        <div className="text-xs text-amber-600">
+                          Enter order code to view details
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Order Summary - Only show during active phase */}

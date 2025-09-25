@@ -70,7 +70,7 @@ export function Navigation() {
                     </NavigationMenuLink>
                     <NavigationMenuLink asChild>
                       <Link
-                        href="/products/individual"
+                        href="/products"
                         className="block space-y-1 rounded-md p-3 leading-none no-underline transition-colors outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                       >
                         <div className="text-sm leading-none font-medium">Individual Purchase</div>
@@ -115,19 +115,20 @@ export function Navigation() {
 
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/about" className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
-                    About
+                  <Link href="/peptide-dosing-guide" className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                    Dosing Guide
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/contact" className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
-                    Contact
+                  <Link href="/faq" className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50">
+                    FAQ
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
+
             </NavigationMenuList>
           </NavigationMenu>
 
@@ -211,7 +212,7 @@ export function Navigation() {
                   <span>Products</span>
                 </Link>
                 <Link
-                  href="/products/individual"
+                  href="/products"
                   className="ml-4 flex items-center space-x-2 text-lg font-medium"
                   onClick={() => setIsOpen(false)}
                 >
@@ -240,18 +241,19 @@ export function Navigation() {
                   <span>Track Order</span>
                 </Link>
                 <Link
-                  href="/about"
+                  href="/peptide-dosing-guide"
                   className="flex items-center space-x-2 text-lg font-medium"
                   onClick={() => setIsOpen(false)}
                 >
-                  <span>About</span>
+                  <Package className="h-5 w-5" />
+                  <span>Dosing Guide</span>
                 </Link>
                 <Link
-                  href="/contact"
+                  href="/faq"
                   className="flex items-center space-x-2 text-lg font-medium"
                   onClick={() => setIsOpen(false)}
                 >
-                  <span>Contact</span>
+                  <span>FAQ</span>
                 </Link>
                 <div className="border-t pt-4">
                   {isSignedIn
