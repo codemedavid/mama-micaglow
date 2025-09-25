@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { categories } from '@/data/peptides';
 import { useCartActions } from '@/hooks/useCartActions';
 
 type Product = {
@@ -31,7 +32,7 @@ type ProductsClientProps = {
   products: Product[];
 };
 
-const categories = ['all', 'Healing', 'Recovery', 'Growth', 'Anti-Aging', 'Cosmetic'];
+// Categories are now imported from peptides data to match dosing guide
 
 export function ProductsClient({ products }: ProductsClientProps) {
   const { addIndividualItem } = useCartActions();
@@ -108,8 +109,8 @@ export function ProductsClient({ products }: ProductsClientProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category === 'all' ? 'All Categories' : category}
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
