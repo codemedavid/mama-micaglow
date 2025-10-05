@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { AuthGuard } from '@/components/AuthGuard';
 import GroupBuyCheckout from '@/components/GroupBuyCheckout';
 import SubGroupCheckout from '@/components/SubGroupCheckout';
 import { Badge } from '@/components/ui/badge';
@@ -295,31 +296,47 @@ export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpe
               </div>
 
               <div className="space-y-2 pt-2">
-                {hasGroupBuyItems()
-                  ? (
-                      <Button className="w-full" onClick={openGroupBuyCheckout}>
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Checkout Group Buy Items
+                <AuthGuard
+                  requireAuth={true}
+                  fallback={(
+                    <div className="space-y-2">
+                      <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-center">
+                        <p className="text-sm text-orange-800">
+                          Please sign in to proceed with checkout
+                        </p>
+                      </div>
+                      <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+                        Continue Shopping
                       </Button>
-                    )
-                  : hasSubGroupItems()
+                    </div>
+                  )}
+                >
+                  {hasGroupBuyItems()
                     ? (
-                        <Button className="w-full" onClick={openSubGroupCheckout}>
+                        <Button className="w-full" onClick={openGroupBuyCheckout}>
                           <CreditCard className="mr-2 h-4 w-4" />
-                          Checkout Sub-Group Items
+                          Checkout Group Buy Items
                         </Button>
                       )
-                    : (
-                        <Button className="w-full" asChild>
-                          <Link href="/checkout">
+                    : hasSubGroupItems()
+                      ? (
+                          <Button className="w-full" onClick={openSubGroupCheckout}>
                             <CreditCard className="mr-2 h-4 w-4" />
-                            Proceed to Checkout
-                          </Link>
-                        </Button>
-                      )}
-                <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
-                  Continue Shopping
-                </Button>
+                            Checkout Sub-Group Items
+                          </Button>
+                        )
+                      : (
+                          <Button className="w-full" asChild>
+                            <Link href="/checkout">
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Proceed to Checkout
+                            </Link>
+                          </Button>
+                        )}
+                  <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+                    Continue Shopping
+                  </Button>
+                </AuthGuard>
               </div>
             </div>
           </div>

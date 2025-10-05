@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  AlertCircle,
   ArrowLeft,
   CheckCircle,
   CreditCard,
@@ -12,6 +13,7 @@ import {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import { AuthGuard } from '@/components/AuthGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -445,312 +447,335 @@ function CheckoutPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-4xl">
-          {/* Header */}
-          <div className="mb-8">
-            <Button variant="ghost" asChild className="mb-4">
-              <Link href="/products">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Products
-              </Link>
-            </Button>
-            <h1 className="text-3xl font-bold">Checkout</h1>
-            <p className="text-muted-foreground">Review your order and complete your purchase</p>
+    <AuthGuard
+      requireAuth={true}
+      fallback={(
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-20">
+            <div className="mx-auto max-w-md text-center">
+              <AlertCircle className="mx-auto mb-4 h-16 w-16 text-orange-500" />
+              <h1 className="mb-2 text-2xl font-bold">Authentication Required</h1>
+              <p className="mb-6 text-muted-foreground">
+                You need to be signed in to access the checkout page
+              </p>
+              <Button asChild>
+                <Link href="/products">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Products
+                </Link>
+              </Button>
+            </div>
           </div>
+        </div>
+      )}
+    >
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mx-auto max-w-4xl">
+            {/* Header */}
+            <div className="mb-8">
+              <Button variant="ghost" asChild className="mb-4">
+                <Link href="/products">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Products
+                </Link>
+              </Button>
+              <h1 className="text-3xl font-bold">Checkout</h1>
+              <p className="text-muted-foreground">Review your order and complete your purchase</p>
+            </div>
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Order Summary */}
-            <div className="space-y-6 lg:col-span-2">
-              {/* Batch Products */}
-              {batchData && (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      {getTypeIcon('subgroup')}
-                      <CardTitle className="text-lg">{getTypeLabel('subgroup')}</CardTitle>
-                      <Badge className={getTypeColor('subgroup')}>
-                        {batchData.batch_products.length}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              {/* Order Summary */}
+              <div className="space-y-6 lg:col-span-2">
+                {/* Batch Products */}
+                {batchData && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        {getTypeIcon('subgroup')}
+                        <CardTitle className="text-lg">{getTypeLabel('subgroup')}</CardTitle>
+                        <Badge className={getTypeColor('subgroup')}>
+                          {batchData.batch_products.length}
+                          {' '}
+                          product
+                          {batchData.batch_products.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                      <CardDescription>
+                        {batchData.name}
                         {' '}
-                        product
-                        {batchData.batch_products.length !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                    <CardDescription>
-                      {batchData.name}
-                      {' '}
-                      -
-                      {' '}
-                      {batchData.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {batchData.batch_products.map(batchProduct => (
-                        <div key={batchProduct.product_id} className="flex items-center justify-between border-b py-4 last:border-b-0">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted">
-                              <Package className="h-6 w-6" />
+                        -
+                        {' '}
+                        {batchData.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {batchData.batch_products.map(batchProduct => (
+                          <div key={batchProduct.product_id} className="flex items-center justify-between border-b py-4 last:border-b-0">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted">
+                                <Package className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{batchProduct.product.name}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {batchProduct.product.description}
+                                </p>
+                                <div className="mt-1 flex items-center gap-4 text-sm">
+                                  <span className="font-medium text-green-600">
+                                    ₱
+                                    {batchProduct.price_per_vial.toLocaleString()}
+                                    {' '}
+                                    per vial
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {batchProduct.current_vials}
+                                    /
+                                    {batchProduct.target_vials}
+                                    {' '}
+                                    vials
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="font-medium">{batchProduct.product.name}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                {batchProduct.product.description}
-                              </p>
-                              <div className="mt-1 flex items-center gap-4 text-sm">
-                                <span className="font-medium text-green-600">
-                                  ₱
-                                  {batchProduct.price_per_vial.toLocaleString()}
-                                  {' '}
-                                  per vial
-                                </span>
-                                <span className="text-muted-foreground">
-                                  {batchProduct.current_vials}
-                                  /
-                                  {batchProduct.target_vials}
-                                  {' '}
-                                  vials
-                                </span>
+                            <div className="text-right">
+                              <div className="text-lg font-semibold">
+                                Available
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {batchProduct.target_vials - batchProduct.current_vials}
+                                {' '}
+                                vials left
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-lg font-semibold">
-                              Available
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {batchProduct.target_vials - batchProduct.current_vials}
-                              {' '}
-                              vials left
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-              {/* Items by Type */}
-              {Object.entries(groupedItems).map(([type, items]) => (
-                <Card key={type}>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      {getTypeIcon(type)}
-                      <CardTitle className="text-lg">{getTypeLabel(type)}</CardTitle>
-                      <Badge className={getTypeColor(type)}>
-                        {items.length}
-                        {' '}
-                        item
-                        {items.length !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {items.map(item => (
-                        <div key={`${item.id}-${item.type}`} className="flex items-center justify-between border-b py-2 last:border-b-0">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted">
-                              {getTypeIcon(item.type)}
+                {/* Items by Type */}
+                {Object.entries(groupedItems).map(([type, items]) => (
+                  <Card key={type}>
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        {getTypeIcon(type)}
+                        <CardTitle className="text-lg">{getTypeLabel(type)}</CardTitle>
+                        <Badge className={getTypeColor(type)}>
+                          {items.length}
+                          {' '}
+                          item
+                          {items.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {items.map(item => (
+                          <div key={`${item.id}-${item.type}`} className="flex items-center justify-between border-b py-2 last:border-b-0">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted">
+                                {getTypeIcon(item.type)}
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{item.name}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.type === 'individual'
+                                    ? `₱${item.price.toLocaleString()} per box (${item.vialsPerBox} vials)`
+                                    : `₱${item.price.toLocaleString()} per vial`}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="font-medium">{item.name}</h4>
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                ₱
+                                {(item.price * item.quantity).toLocaleString()}
+                              </p>
                               <p className="text-sm text-muted-foreground">
-                                {item.type === 'individual'
-                                  ? `₱${item.price.toLocaleString()} per box (${item.vialsPerBox} vials)`
-                                  : `₱${item.price.toLocaleString()} per vial`}
+                                Qty:
+                                {' '}
+                                {item.quantity}
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold">
-                              ₱
-                              {(item.price * item.quantity).toLocaleString()}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Qty:
-                              {' '}
-                              {item.quantity}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Shipping Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Shipping Information</CardTitle>
+                    <CardDescription>
+                      Enter your delivery details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" placeholder="Enter first name" value={firstName} onChange={e => setFirstName(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" placeholder="Enter last name" value={lastName} onChange={e => setLastName(e.target.value)} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" placeholder="Enter email address" value={email} onChange={e => setEmail(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input id="phone" placeholder="Enter phone number" value={phone} onChange={e => setPhone(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Address</Label>
+                      <Textarea id="address" placeholder="Enter complete address" value={address} onChange={e => setAddress(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div>
+                        <Label htmlFor="city">City</Label>
+                        <Input id="city" placeholder="Enter city" value={city} onChange={e => setCity(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label htmlFor="province">Province</Label>
+                        <Input id="province" placeholder="Enter province" value={province} onChange={e => setProvince(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label htmlFor="zipCode">ZIP Code</Label>
+                        <Input id="zipCode" placeholder="Enter ZIP code" value={zipCode} onChange={e => setZipCode(e.target.value)} />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              </div>
 
-              {/* Shipping Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Information</CardTitle>
-                  <CardDescription>
-                    Enter your delivery details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" placeholder="Enter first name" value={firstName} onChange={e => setFirstName(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" placeholder="Enter last name" value={lastName} onChange={e => setLastName(e.target.value)} />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="Enter email address" value={email} onChange={e => setEmail(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" placeholder="Enter phone number" value={phone} onChange={e => setPhone(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Textarea id="address" placeholder="Enter complete address" value={address} onChange={e => setAddress(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input id="city" placeholder="Enter city" value={city} onChange={e => setCity(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label htmlFor="province">Province</Label>
-                      <Input id="province" placeholder="Enter province" value={province} onChange={e => setProvince(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode">ZIP Code</Label>
-                      <Input id="zipCode" placeholder="Enter ZIP code" value={zipCode} onChange={e => setZipCode(e.target.value)} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Order Summary Sidebar */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>
-                        Items (
-                        {state.itemCount}
-                        )
-                      </span>
-                      <span>
-                        ₱
-                        {state.total.toLocaleString()}
-                      </span>
-                    </div>
-
-                    {/* Show shipping only for individual orders */}
-                    {batchType !== 'subgroup' && (
-                      <>
-                        <div className="flex justify-between">
-                          <span>Shipping (₱2,600 / up to 4 boxes)</span>
-                          <span>
-                            ₱
-                            {shipping.toLocaleString()}
-                          </span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between text-lg font-bold">
-                          <span>Total</span>
-                          <span>
-                            ₱
-                            {grandTotal.toLocaleString()}
-                          </span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Show total for sub-group orders */}
-                    {batchType === 'subgroup' && (
-                      <>
-                        <Separator />
-                        <div className="flex justify-between text-lg font-bold">
-                          <span>Total</span>
-                          <span>
-                            ₱
-                            {state.total.toLocaleString()}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Button
-                      className="w-full"
-                      size="lg"
-                      onClick={handlePlaceOrder}
-                      disabled={
-                        isSubmitting
-                        || (batchType === 'subgroup'
-                          ? state.items.filter(item => item.type === 'subgroup').length === 0
-                          : getTotalBoxes() === 0)
-                      }
-                    >
-                      {isSubmitting
-                        ? (
-                            <>
-                              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              Processing Order...
-                            </>
+              {/* Order Summary Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Order Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>
+                          Items (
+                          {state.itemCount}
                           )
-                        : (
-                            <>
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              {batchType === 'subgroup' ? 'Contact Region Host' : 'Place Order'}
-                            </>
-                          )}
-                    </Button>
-                    <p className="text-center text-xs text-muted-foreground">
-                      {batchType === 'subgroup'
-                        ? 'You will be redirected to the region host\'s WhatsApp to complete your order'
-                        : 'By placing this order, you agree to our terms and conditions'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                        </span>
+                        <span>
+                          ₱
+                          {state.total.toLocaleString()}
+                        </span>
+                      </div>
 
-              {/* Security Features */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Security & Guarantees</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-purple-500" />
-                    <span>Secure payment processing</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-purple-500" />
-                    <span>30-day money-back guarantee</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-purple-500" />
-                    <span>Free shipping on all orders</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-purple-500" />
-                    <span>Discrete packaging</span>
-                  </div>
-                </CardContent>
-              </Card>
+                      {/* Show shipping only for individual orders */}
+                      {batchType !== 'subgroup' && (
+                        <>
+                          <div className="flex justify-between">
+                            <span>Shipping (₱2,600 / up to 4 boxes)</span>
+                            <span>
+                              ₱
+                              {shipping.toLocaleString()}
+                            </span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between text-lg font-bold">
+                            <span>Total</span>
+                            <span>
+                              ₱
+                              {grandTotal.toLocaleString()}
+                            </span>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Show total for sub-group orders */}
+                      {batchType === 'subgroup' && (
+                        <>
+                          <Separator />
+                          <div className="flex justify-between text-lg font-bold">
+                            <span>Total</span>
+                            <span>
+                              ₱
+                              {state.total.toLocaleString()}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={handlePlaceOrder}
+                        disabled={
+                          isSubmitting
+                          || (batchType === 'subgroup'
+                            ? state.items.filter(item => item.type === 'subgroup').length === 0
+                            : getTotalBoxes() === 0)
+                        }
+                      >
+                        {isSubmitting
+                          ? (
+                              <>
+                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                Processing Order...
+                              </>
+                            )
+                          : (
+                              <>
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                {batchType === 'subgroup' ? 'Contact Region Host' : 'Place Order'}
+                              </>
+                            )}
+                      </Button>
+                      <p className="text-center text-xs text-muted-foreground">
+                        {batchType === 'subgroup'
+                          ? 'You will be redirected to the region host\'s WhatsApp to complete your order'
+                          : 'By placing this order, you agree to our terms and conditions'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Security Features */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Security & Guarantees</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-purple-500" />
+                      <span>Secure payment processing</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-purple-500" />
+                      <span>30-day money-back guarantee</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-purple-500" />
+                      <span>Free shipping on all orders</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-purple-500" />
+                      <span>Discrete packaging</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
 
