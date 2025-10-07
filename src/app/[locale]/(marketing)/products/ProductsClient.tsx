@@ -7,14 +7,52 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { categories } from '@/data/categories';
 import { useCartActions } from '@/hooks/useCartActions';
+
+// Category mapping with emojis (matching dosing guide)
+const categoryMapping = [
+  { id: 'all', name: 'All Peptides', icon: '💊' },
+  { id: 'Weight Loss & Metabolic', name: 'Weight Loss & Metabolic', icon: '⚖️' },
+  { id: 'Tissue Repair & Healing', name: 'Tissue Repair & Healing', icon: '🩹' },
+  { id: 'Anti-Aging & Longevity', name: 'Anti-Aging & Longevity', icon: '✨' },
+  { id: 'Neuroprotection & Cognitive', name: 'Neuroprotection & Cognitive', icon: '🧠' },
+  { id: 'Reproductive & Hormone', name: 'Reproductive & Hormone', icon: '❤️' },
+  { id: 'Other', name: 'Other', icon: '🔬' },
+];
+
+// Function to normalize category names
+const normalizeCategory = (category: string): string => {
+  const lowerCategory = category.toLowerCase();
+
+  // Map common peptide names to proper categories
+  if (lowerCategory.includes('tirzepatide') || lowerCategory.includes('semaglutide') || lowerCategory.includes('retatrutide') || lowerCategory.includes('mazdutide') || lowerCategory.includes('cagrilintide') || lowerCategory.includes('survodutide') || lowerCategory.includes('aod') || lowerCategory.includes('weight') || lowerCategory.includes('metabolic') || lowerCategory.includes('fat') || lowerCategory.includes('lemon bottle') || lowerCategory.includes('amino') || lowerCategory.includes('adipotide') || lowerCategory.includes('lipoc') || lowerCategory.includes('carnitine') || lowerCategory.includes('melanotan') || lowerCategory.includes('hgh fragment') || lowerCategory.includes('glp') || lowerCategory.includes('slu-pp')) {
+    return 'Weight Loss & Metabolic';
+  }
+  if (lowerCategory.includes('bpc') || lowerCategory.includes('tb-500') || lowerCategory.includes('ipamorelin') || lowerCategory.includes('cjc') || lowerCategory.includes('sermorelin') || lowerCategory.includes('tesamorelin') || lowerCategory.includes('hgh') || lowerCategory.includes('igf') || lowerCategory.includes('hexarelin') || lowerCategory.includes('ghrp') || lowerCategory.includes('tissue') || lowerCategory.includes('healing') || lowerCategory.includes('repair') || lowerCategory.includes('klow')) {
+    return 'Tissue Repair & Healing';
+  }
+  if (lowerCategory.includes('ghk') || lowerCategory.includes('epitalon') || lowerCategory.includes('nad') || lowerCategory.includes('glutathione') || lowerCategory.includes('snap') || lowerCategory.includes('pinealon') || lowerCategory.includes('ss-31') || lowerCategory.includes('motsc') || lowerCategory.includes('ahk') || lowerCategory.includes('botulinum') || lowerCategory.includes('glow') || lowerCategory.includes('aging') || lowerCategory.includes('longevity')) {
+    return 'Anti-Aging & Longevity';
+  }
+  if (lowerCategory.includes('semax') || lowerCategory.includes('selank') || lowerCategory.includes('dsip') || lowerCategory.includes('cerebrolysin') || lowerCategory.includes('neuro') || lowerCategory.includes('cognitive') || lowerCategory.includes('brain')) {
+    return 'Neuroprotection & Cognitive';
+  }
+  if (lowerCategory.includes('hcg') || lowerCategory.includes('pt-141') || lowerCategory.includes('oxytocin') || lowerCategory.includes('kisspeptin') || lowerCategory.includes('hmg') || lowerCategory.includes('reproductive') || lowerCategory.includes('hormone') || lowerCategory.includes('testosterone') || lowerCategory.includes('libido') || lowerCategory.includes('fertility')) {
+    return 'Reproductive & Hormone';
+  }
+  if (lowerCategory.includes('thymalin') || lowerCategory.includes('thymosin') || lowerCategory.includes('vip') || lowerCategory.includes('ll37') || lowerCategory.includes('melatonin') || lowerCategory.includes('dermorphin') || lowerCategory.includes('insulin') || lowerCategory.includes('epo') || lowerCategory.includes('ara290') || lowerCategory.includes('kpv') || lowerCategory.includes('pnc') || lowerCategory.includes('other')) {
+    return 'Other';
+  }
+
+  // If it's already a proper category name, return it
+  return categoryMapping.find(cat => cat.name === category)?.id || 'Other';
+};
 
 type Product = {
   id: string;
@@ -32,19 +70,54 @@ type ProductsClientProps = {
   products: Product[];
 };
 
-// Categories are now imported from peptides data to match dosing guide
-
 export function ProductsClient({ products }: ProductsClientProps) {
   const { addIndividualItem } = useCartActions();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
-      || product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Generate available categories based on products that actually exist
+  const availableCategories = useMemo(() => {
+    const productCategories = new Set(products.map(product => normalizeCategory(product.category)));
+
+    // Filter category mapping to only show those that have products
+    const categoriesWithProducts = categoryMapping.filter(category =>
+      category.id === 'all' || productCategories.has(category.id),
+    );
+
+    return categoriesWithProducts;
+  }, [products]);
+
+  // Filter products based on search and category
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        || product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const normalizedProductCategory = normalizeCategory(product.category);
+      const matchesCategory = selectedCategory === 'all' || normalizedProductCategory === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, selectedCategory]);
+
+  // Group filtered products by normalized category
+  const productsByCategory = useMemo(() => {
+    const grouped = filteredProducts.reduce((acc, product) => {
+      const normalizedCategory = normalizeCategory(product.category);
+      if (!acc[normalizedCategory]) {
+        acc[normalizedCategory] = [];
+      }
+      acc[normalizedCategory]!.push(product);
+      return acc;
+    }, {} as Record<string, Product[]>);
+
+    // Sort categories alphabetically
+    const sortedCategories = Object.keys(grouped).sort();
+    const sortedGrouped: Record<string, Product[]> = {};
+    sortedCategories.forEach((category) => {
+      sortedGrouped[category] = grouped[category]!;
+    });
+
+    return sortedGrouped;
+  }, [filteredProducts]);
 
   const handleAddToCart = (product: Product) => {
     addIndividualItem({
@@ -105,12 +178,22 @@ export function ProductsClient({ products }: ProductsClientProps) {
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Category">
+                    {availableCategories.find(cat => cat.id === selectedCategory) && (
+                      <span className="flex items-center gap-2">
+                        <span>{availableCategories.find(cat => cat.id === selectedCategory)?.icon}</span>
+                        <span>{availableCategories.find(cat => cat.id === selectedCategory)?.name}</span>
+                      </span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
+                  {availableCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>
-                      {category.name}
+                      <span className="flex items-center gap-2">
+                        <span>{category.icon}</span>
+                        <span>{category.name}</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -128,73 +211,112 @@ export function ProductsClient({ products }: ProductsClientProps) {
       {/* Products Grid */}
       <section id="products" className="py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map(product => (
-              <Card key={product.id} className="group transition-shadow hover:shadow-lg">
-                <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
-                    <Package className="h-16 w-16 text-purple-400" />
-                  </div>
-                  {!product.inStock && (
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="destructive">Out of Stock</Badge>
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2">
-                    <Badge variant="secondary">{product.category}</Badge>
-                  </div>
+          {Object.keys(productsByCategory).length === 0
+            ? (
+                <div className="py-12 text-center">
+                  <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                  <h3 className="mb-2 text-lg font-semibold">No products found</h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search terms or category filter.
+                  </p>
                 </div>
+              )
+            : (
+                <div className="space-y-12">
+                  {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+                    <div key={category}>
+                      {/* Category Header */}
+                      <div className="mb-6">
+                        <h2 className="mb-2 text-2xl font-bold text-gray-900">
+                          <span className="flex items-center gap-3">
+                            <span>{categoryMapping.find(cat => cat.id === category)?.icon || '💊'}</span>
+                            <span>{category}</span>
+                          </span>
+                        </h2>
+                        <p className="text-muted-foreground">
+                          {categoryProducts.length}
+                          {' '}
+                          product
+                          {categoryProducts.length !== 1
+                            ? 's'
+                            : ''}
+                          {' '}
+                          in this category
+                        </p>
+                      </div>
 
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{product.name}</CardTitle>
-                      <CardDescription className="mt-1">
-                        {product.description}
-                      </CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">
-                        ₱
-                        {product.price.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        per box (
-                        {product.vialsPerBox}
-                        {' '}
-                        vials)
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Individual: ₱
-                        {product.pricePerVial}
-                        /vial
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
+                      {/* Products Grid for this Category */}
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {categoryProducts.map(product => (
+                          <Card key={product.id} className="group transition-shadow hover:shadow-lg">
+                            <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
+                              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200">
+                                <Package className="h-16 w-16 text-purple-400" />
+                              </div>
+                              {!product.inStock && (
+                                <div className="absolute top-2 right-2">
+                                  <Badge variant="destructive">Out of Stock</Badge>
+                                </div>
+                              )}
+                              <div className="absolute top-2 left-2">
+                                <Badge variant="secondary">{product.category}</Badge>
+                              </div>
+                            </div>
 
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <Button
-                        className="flex-1"
-                        disabled={!product.inStock}
-                        onClick={() => handleAddToCart(product)}
-                      >
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Add to Cart
-                      </Button>
-                      <Button variant="outline" size="icon" asChild>
-                        <Link href={`/products/${product.id}`}>
-                          <Package className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                                  <CardDescription className="mt-1">
+                                    {product.description}
+                                  </CardDescription>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-2xl font-bold text-primary">
+                                    ₱
+                                    {product.price.toLocaleString()}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    per box (
+                                    {product.vialsPerBox}
+                                    {' '}
+                                    vials)
+                                  </div>
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    Individual: ₱
+                                    {product.pricePerVial}
+                                    /vial
+                                  </div>
+                                </div>
+                              </div>
+                            </CardHeader>
+
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="flex gap-2">
+                                  <Button
+                                    className="flex-1"
+                                    disabled={!product.inStock}
+                                    onClick={() => handleAddToCart(product)}
+                                  >
+                                    <ShoppingCart className="mr-2 h-4 w-4" />
+                                    Add to Cart
+                                  </Button>
+                                  <Button variant="outline" size="icon" asChild>
+                                    <Link href={`/products/${product.id}`}>
+                                      <Package className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  ))}
+                </div>
+              )}
         </div>
       </section>
     </div>

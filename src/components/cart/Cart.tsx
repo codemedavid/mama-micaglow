@@ -71,8 +71,10 @@ export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpe
 
   // Group-buy helpers for checkout
   const getGroupBuyItems = () => state.items.filter(item => item.type === 'group-buy');
+  const getIndividualItems = () => state.items.filter(item => item.type === 'individual');
   const getGroupBuyTotal = () => getGroupBuyItems().reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const hasGroupBuyItems = () => getGroupBuyItems().length > 0;
+  const hasIndividualItems = () => getIndividualItems().length > 0;
   const openGroupBuyCheckout = () => setIsCheckoutOpen(true);
   const closeGroupBuyCheckout = () => setIsCheckoutOpen(false);
 
@@ -325,14 +327,21 @@ export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpe
                             Checkout Sub-Group Items
                           </Button>
                         )
-                      : (
-                          <Button className="w-full" asChild>
-                            <Link href="/checkout">
+                      : hasIndividualItems()
+                        ? (
+                            <Button className="w-full" asChild>
+                              <Link href="/checkout">
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Proceed to Checkout
+                              </Link>
+                            </Button>
+                          )
+                        : (
+                            <Button className="w-full" disabled>
                               <CreditCard className="mr-2 h-4 w-4" />
-                              Proceed to Checkout
-                            </Link>
-                          </Button>
-                        )}
+                              Cart is Empty
+                            </Button>
+                          )}
                   <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
                     Continue Shopping
                   </Button>

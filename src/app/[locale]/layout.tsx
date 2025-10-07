@@ -53,7 +53,12 @@ export default async function RootLayout(props: {
   return (
     <html lang={locale}>
       <body>
-        <ClerkProvider>
+        <ClerkProvider
+          appearance={{
+            cssLayerName: 'clerk',
+          }}
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        >
           <NextIntlClientProvider>
             <PostHogProvider>
               <CartProvider>
