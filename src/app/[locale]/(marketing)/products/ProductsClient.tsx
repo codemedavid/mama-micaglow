@@ -26,27 +26,95 @@ const categoryMapping = [
   { id: 'Other', name: 'Other', icon: '🔬' },
 ];
 
-// Function to normalize category names
+// Function to normalize category names based on actual database categories
 const normalizeCategory = (category: string): string => {
   const lowerCategory = category.toLowerCase();
 
-  // Map common peptide names to proper categories
-  if (lowerCategory.includes('tirzepatide') || lowerCategory.includes('semaglutide') || lowerCategory.includes('retatrutide') || lowerCategory.includes('mazdutide') || lowerCategory.includes('cagrilintide') || lowerCategory.includes('survodutide') || lowerCategory.includes('aod') || lowerCategory.includes('weight') || lowerCategory.includes('metabolic') || lowerCategory.includes('fat') || lowerCategory.includes('lemon bottle') || lowerCategory.includes('amino') || lowerCategory.includes('adipotide') || lowerCategory.includes('lipoc') || lowerCategory.includes('carnitine') || lowerCategory.includes('melanotan') || lowerCategory.includes('hgh fragment') || lowerCategory.includes('glp') || lowerCategory.includes('slu-pp')) {
+  // Weight Loss & Metabolic Peptides
+  if (lowerCategory.includes('tirzepatide')
+    || lowerCategory.includes('semaglutide')
+    || lowerCategory.includes('retatrutide')
+    || lowerCategory.includes('cagrilintide')
+    || lowerCategory.includes('survodutide')
+    || lowerCategory.includes('aod-9604')
+    || lowerCategory.includes('adipotide')
+    || lowerCategory.includes('lipoc')
+    || lowerCategory.includes('l-carnitine')
+    || lowerCategory.includes('melanotan')
+    || lowerCategory.includes('hgh fragment')
+    || lowerCategory.includes('5-amino-1mq')
+    || lowerCategory.includes('lemon bottle')
+    || lowerCategory.includes('mots-c')) {
     return 'Weight Loss & Metabolic';
   }
-  if (lowerCategory.includes('bpc') || lowerCategory.includes('tb-500') || lowerCategory.includes('ipamorelin') || lowerCategory.includes('cjc') || lowerCategory.includes('sermorelin') || lowerCategory.includes('tesamorelin') || lowerCategory.includes('hgh') || lowerCategory.includes('igf') || lowerCategory.includes('hexarelin') || lowerCategory.includes('ghrp') || lowerCategory.includes('tissue') || lowerCategory.includes('healing') || lowerCategory.includes('repair') || lowerCategory.includes('klow')) {
+
+  // Tissue Repair & Healing Peptides
+  if (lowerCategory.includes('bpc-157')
+    || lowerCategory.includes('bcp')
+    || lowerCategory.includes('tb-500')
+    || lowerCategory.includes('ipamorelin')
+    || lowerCategory.includes('cjc-1295')
+    || lowerCategory.includes('cjc')
+    || lowerCategory.includes('sermorelin')
+    || lowerCategory.includes('tesamorelin')
+    || lowerCategory.includes('hgh')
+    || lowerCategory.includes('growth hormone')
+    || lowerCategory.includes('igf-1')
+    || lowerCategory.includes('igf')
+    || lowerCategory.includes('hexarelin')
+    || lowerCategory.includes('ghrp-6')
+    || lowerCategory.includes('ghrp')) {
     return 'Tissue Repair & Healing';
   }
-  if (lowerCategory.includes('ghk') || lowerCategory.includes('epitalon') || lowerCategory.includes('nad') || lowerCategory.includes('glutathione') || lowerCategory.includes('snap') || lowerCategory.includes('pinealon') || lowerCategory.includes('ss-31') || lowerCategory.includes('motsc') || lowerCategory.includes('ahk') || lowerCategory.includes('botulinum') || lowerCategory.includes('glow') || lowerCategory.includes('aging') || lowerCategory.includes('longevity')) {
+
+  // Anti-Aging & Longevity Peptides
+  if (lowerCategory.includes('ghk-cu')
+    || lowerCategory.includes('ghk')
+    || lowerCategory.includes('epitalon')
+    || lowerCategory.includes('nad+')
+    || lowerCategory.includes('nad')
+    || lowerCategory.includes('glutathione')
+    || lowerCategory.includes('pinealon')
+    || lowerCategory.includes('ss-31')
+    || lowerCategory.includes('hyaluronic acid')) {
     return 'Anti-Aging & Longevity';
   }
-  if (lowerCategory.includes('semax') || lowerCategory.includes('selank') || lowerCategory.includes('dsip') || lowerCategory.includes('cerebrolysin') || lowerCategory.includes('neuro') || lowerCategory.includes('cognitive') || lowerCategory.includes('brain')) {
+
+  // Neuroprotection & Cognitive Peptides
+  if (lowerCategory.includes('semax')
+    || lowerCategory.includes('selank')
+    || lowerCategory.includes('dsip')
+    || lowerCategory.includes('cerebrolysin')
+    || lowerCategory.includes('delta sleep')) {
     return 'Neuroprotection & Cognitive';
   }
-  if (lowerCategory.includes('hcg') || lowerCategory.includes('pt-141') || lowerCategory.includes('oxytocin') || lowerCategory.includes('kisspeptin') || lowerCategory.includes('hmg') || lowerCategory.includes('reproductive') || lowerCategory.includes('hormone') || lowerCategory.includes('testosterone') || lowerCategory.includes('libido') || lowerCategory.includes('fertility')) {
+
+  // Reproductive & Hormone Peptides
+  if (lowerCategory.includes('hcg')
+    || lowerCategory.includes('pt-141')
+    || lowerCategory.includes('oxytocin')
+    || lowerCategory.includes('kisspeptin')
+    || lowerCategory.includes('hmg')) {
     return 'Reproductive & Hormone';
   }
-  if (lowerCategory.includes('thymalin') || lowerCategory.includes('thymosin') || lowerCategory.includes('vip') || lowerCategory.includes('ll37') || lowerCategory.includes('melatonin') || lowerCategory.includes('dermorphin') || lowerCategory.includes('insulin') || lowerCategory.includes('epo') || lowerCategory.includes('ara290') || lowerCategory.includes('kpv') || lowerCategory.includes('pnc') || lowerCategory.includes('other')) {
+
+  // Other/Utility Peptides
+  if (lowerCategory.includes('thymalin')
+    || lowerCategory.includes('thymosin')
+    || lowerCategory.includes('vip')
+    || lowerCategory.includes('melatonin')
+    || lowerCategory.includes('dermorphin')
+    || lowerCategory.includes('insulin')
+    || lowerCategory.includes('epo')
+    || lowerCategory.includes('ara-290')
+    || lowerCategory.includes('ara290')
+    || lowerCategory.includes('kpv')
+    || lowerCategory.includes('pnc')
+    || lowerCategory.includes('bacteriostatic water')
+    || lowerCategory.includes('acetic acid')
+    || lowerCategory.includes('pbs')
+    || lowerCategory.includes('lc120')
+    || lowerCategory.includes('peptide combinations')) {
     return 'Other';
   }
 
