@@ -68,15 +68,23 @@ type Order = {
   id: number;
   order_code: string;
   customer_name: string;
-  whatsapp_number: string;
-  batch_id: number;
+  whatsapp_number?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  shipping_address?: string;
+  shipping_city?: string;
+  shipping_province?: string;
+  shipping_zip_code?: string;
+  batch_id?: number;
+  subtotal?: number;
+  shipping_cost?: number;
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
   payment_status: 'pending' | 'paid' | 'refunded';
   created_at: string;
   updated_at: string;
   user_id?: number;
-  batch: {
+  batch?: {
     id: number;
     name: string;
     status: string;
@@ -88,7 +96,7 @@ type Order = {
     first_name: string | null;
     last_name: string | null;
   };
-  order_items: OrderItem[];
+  order_items?: OrderItem[];
 };
 
 const statusOptions = [
@@ -374,26 +382,27 @@ export default function OrdersPage() {
   };
 
   const openWhatsApp = (order: Order) => {
-    const message = `Hi! I'm following up on order ${order.order_code} for batch "${order.batch.name}". Please provide an update on the status.`;
+    const batchName = order.batch?.name || 'Individual Order';
+    const message = `Hi! I'm following up on order ${order.order_code} for ${batchName}. Please provide an update on the status.`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/639154901224?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
   };
 
   // Get unique batches for filter
-  const uniqueBatches = Array.from(new Set(orders.map(order => order.batch.name)));
+  const uniqueBatches = Array.from(new Set(orders.map(order => order.batch?.name || 'Individual Order')));
 
   // Advanced filtering logic
   const filteredOrders = orders.filter((order) => {
     const statusMatch = statusFilter === 'all' || order.status === statusFilter;
     const paymentMatch = paymentFilter === 'all' || order.payment_status === paymentFilter;
-    const batchMatch = batchFilter === 'all' || order.batch.name === batchFilter;
+    const batchMatch = batchFilter === 'all' || (order.batch?.name || 'Individual Order') === batchFilter;
 
     const searchMatch = searchQuery === ''
       || order.order_code.toLowerCase().includes(searchQuery.toLowerCase())
       || order.customer_name.toLowerCase().includes(searchQuery.toLowerCase())
-      || order.whatsapp_number.includes(searchQuery)
-      || order.batch.name.toLowerCase().includes(searchQuery.toLowerCase());
+      || (order.whatsapp_number || order.customer_phone || '').includes(searchQuery)
+      || (order.batch?.name || 'Individual Order').toLowerCase().includes(searchQuery.toLowerCase());
 
     const dateMatch = (!dateRange.from || new Date(order.created_at) >= new Date(dateRange.from))
       && (!dateRange.to || new Date(order.created_at) <= new Date(dateRange.to));
@@ -852,11 +861,15 @@ export default function OrdersPage() {
                           <TableCell>
                             <div>
                               <div className="font-medium">{order.customer_name}</div>
-                              <div className="text-sm text-muted-foreground">{order.whatsapp_number}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {order.whatsapp_number || order.customer_phone || 'No contact'}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">{order.batch.name}</div>
+                            <div className="text-sm">
+                              {order.batch?.name || 'Individual Order'}
+                            </div>
                           </TableCell>
                           <TableCell className="font-semibold">
                             ₱

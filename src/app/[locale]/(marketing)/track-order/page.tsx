@@ -1,11 +1,12 @@
 'use client';
 
 import { AlertCircle, CheckCircle, Clock, Package, Phone, Search, Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useRole } from '@/hooks/useRole';
 import { supabase } from '@/lib/supabase';
 
 type OrderItem = {
@@ -81,6 +82,65 @@ export default function TrackOrderPage() {
   const [allUserOrders, setAllUserOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [userOrderCodes, setUserOrderCodes] = useState<string[]>([]);
+  const [loadingUserOrders, setLoadingUserOrders] = useState(true);
+  const { userProfile } = useRole();
+
+  const fetchUserOrderCodes = useCallback(async () => {
+    if (!userProfile?.id) {
+      setLoadingUserOrders(false);
+      return;
+    }
+
+    try {
+      setLoadingUserOrders(true);
+
+      // Fetch user's orders from all order types
+      const [
+        { data: groupBuyOrders },
+        { data: individualOrders },
+        { data: subGroupOrders },
+      ] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('order_code, created_at')
+          .eq('user_id', userProfile.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('individual_orders')
+          .select('order_code, created_at')
+          .eq('user_id', userProfile.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('sub_group_orders')
+          .select('order_code, created_at')
+          .eq('user_id', userProfile.id)
+          .order('created_at', { ascending: false }),
+      ]);
+
+      // Combine all order codes
+      const allOrderCodes = [
+        ...(groupBuyOrders || []),
+        ...(individualOrders || []),
+        ...(subGroupOrders || []),
+      ];
+
+      // Sort by creation date (newest first) and extract order codes
+      const sortedOrderCodes = allOrderCodes
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .map(order => order.order_code);
+
+      setUserOrderCodes(sortedOrderCodes);
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+    } finally {
+      setLoadingUserOrders(false);
+    }
+  }, [userProfile?.id]);
+
+  useEffect(() => {
+    fetchUserOrderCodes();
+  }, [fetchUserOrderCodes]);
 
   const searchOrder = async () => {
     if (!orderCode.trim()) {
@@ -555,6 +615,48 @@ export default function TrackOrderPage() {
               {error && (
                 <div className="rounded-lg bg-red-50 p-4 text-red-700">
                   {error}
+                </div>
+              )}
+
+              {/* User's Order Codes */}
+              {userProfile && (
+                <div className="mt-4">
+                  {loadingUserOrders
+                    ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-purple-600"></div>
+                          <span className="ml-2 text-sm text-gray-600">Loading your orders...</span>
+                        </div>
+                      )
+                    : userOrderCodes.length > 0
+                      ? (
+                          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            <h3 className="mb-3 text-sm font-medium text-gray-700">Your Recent Orders</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {userOrderCodes.map(code => (
+                                <button
+                                  key={code}
+                                  type="button"
+                                  onClick={() => {
+                                    setOrderCode(code);
+                                    searchOrder();
+                                  }}
+                                  className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800 transition-colors hover:bg-purple-200"
+                                >
+                                  {code}
+                                </button>
+                              ))}
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500">
+                              Click any order code to track it instantly
+                            </p>
+                          </div>
+                        )
+                      : (
+                          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+                            <p className="text-sm text-gray-600">No orders found for your account</p>
+                          </div>
+                        )}
                 </div>
               )}
             </div>

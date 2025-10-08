@@ -79,14 +79,41 @@ export default function AdminOverviewPage() {
         .from('users')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch orders data
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(id, clerk_id, email, first_name, last_name)
-        `)
-        .order('created_at', { ascending: false });
+      // Fetch orders data from all order types
+      const [
+        { data: groupBuyOrders },
+        { data: individualOrders },
+        { data: subGroupOrders },
+      ] = await Promise.all([
+        supabase
+          .from('orders')
+          .select(`
+            *,
+            user:users(id, clerk_id, email, first_name, last_name)
+          `)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('individual_orders')
+          .select(`
+            *,
+            user:users(id, clerk_id, email, first_name, last_name)
+          `)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('sub_group_orders')
+          .select(`
+            *,
+            user:users(id, clerk_id, email, first_name, last_name)
+          `)
+          .order('created_at', { ascending: false }),
+      ]);
+
+      // Combine all orders
+      const ordersData = [
+        ...(groupBuyOrders || []),
+        ...(individualOrders || []),
+        ...(subGroupOrders || []),
+      ];
 
       // Fetch recent products
       const { data: recentProducts } = await supabase
