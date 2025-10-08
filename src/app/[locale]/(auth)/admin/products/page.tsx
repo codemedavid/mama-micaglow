@@ -213,11 +213,14 @@ export default function AdminProductsPage() {
       fetchProducts();
     } catch {
       // Handle error if needed
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    setIsSubmitting(false); // Reset submitting state
     setFormData({
       name: product.name,
       description: product.description || '',
@@ -278,6 +281,7 @@ export default function AdminProductsPage() {
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setEditingProduct(null);
+    setIsSubmitting(false);
     resetForm();
   };
 
@@ -313,9 +317,23 @@ export default function AdminProductsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
             <p className="mt-2 text-gray-600">Manage your peptide product catalog</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                handleDialogClose();
+              } else {
+                setIsDialogOpen(true);
+              }
+            }}
+          >
             <DialogTrigger asChild>
-              <Button onClick={() => handleDialogClose()}>
+              <Button onClick={() => {
+                setEditingProduct(null);
+                resetForm();
+                setIsSubmitting(false);
+              }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Product
               </Button>
