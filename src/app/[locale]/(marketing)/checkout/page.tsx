@@ -746,30 +746,6 @@ function CheckoutPageContent() {
                   </CardContent>
                 </Card>
 
-                {/* Security Features */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Security & Guarantees</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-purple-500" />
-                      <span>Secure payment processing</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-purple-500" />
-                      <span>30-day money-back guarantee</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-purple-500" />
-                      <span>Free shipping on all orders</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-purple-500" />
-                      <span>Discrete packaging</span>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
           </div>

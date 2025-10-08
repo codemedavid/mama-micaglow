@@ -287,7 +287,7 @@ export default function HostSettingsPage() {
                     id="whatsapp-number"
                     value={settings.region.whatsapp_number || ''}
                     onChange={e => updateRegion('whatsapp_number', e.target.value)}
-                    placeholder="e.g., +63 912 345 6789"
+                    placeholder="e.g., +63 915 490 1224"
                   />
                 </div>
 

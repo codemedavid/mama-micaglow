@@ -246,8 +246,8 @@ export default function AdminProductsPage() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
+            <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>
                   {editingProduct ? 'Edit Product' : 'Add New Product'}
                 </DialogTitle>
@@ -257,115 +257,134 @@ export default function AdminProductsPage() {
                     : 'Fill in the details to add a new product to your catalog.'}
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex-1 overflow-y-auto px-1">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="name">Product Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={e => setFormData(prev => ({ ...prev, name: e.target.value as string }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="category">Category</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={value => setFormData(prev => ({ ...prev, category: value as string }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(category => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="name">Product Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value as string }))}
-                      required
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={e => setFormData(prev => ({ ...prev, description: e.target.value as string }))}
+                      rows={3}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={value => setFormData(prev => ({ ...prev, category: value as string }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(category => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                      <Label htmlFor="price_per_vial">Price per Vial (₱)</Label>
+                      <Input
+                        id="price_per_vial"
+                        type="number"
+                        step="0.01"
+                        value={formData.price_per_vial}
+                        onChange={e => setFormData(prev => ({ ...prev, price_per_vial: e.target.value as string }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="price_per_box">Price per Box (₱)</Label>
+                      <Input
+                        id="price_per_box"
+                        type="number"
+                        step="0.01"
+                        value={formData.price_per_box}
+                        onChange={e => setFormData(prev => ({ ...prev, price_per_box: e.target.value as string }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vials_per_box">Vials per Box</Label>
+                      <Input
+                        id="vials_per_box"
+                        type="number"
+                        value={formData.vials_per_box}
+                        onChange={e => setFormData(prev => ({ ...prev, vials_per_box: e.target.value as string }))}
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value as string }))}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <div>
-                    <Label htmlFor="price_per_vial">Price per Vial (₱)</Label>
-                    <Input
-                      id="price_per_vial"
-                      type="number"
-                      step="0.01"
-                      value={formData.price_per_vial}
-                      onChange={e => setFormData(prev => ({ ...prev, price_per_vial: e.target.value as string }))}
-                      required
+                    <Label htmlFor="image_url">Product Image</Label>
+                    <ImageUpload
+                      currentImageUrl={formData.image_url || undefined}
+                      onImageUploadedAction={(url: string) => setFormData(prev => ({ ...prev, image_url: url }))}
+                      onImageRemovedAction={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                      disabled={isSubmitting}
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      Upload a high-quality image of your product. Recommended size: 800x600px
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="specifications">Specifications (JSON)</Label>
+                    <Textarea
+                      id="specifications"
+                      value={formData.specifications}
+                      onChange={e => setFormData(prev => ({ ...prev, specifications: e.target.value as string }))}
+                      rows={4}
+                      placeholder='{"purity": "99%", "storage": "2-8°C", "shelf_life": "24 months"}'
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="price_per_box">Price per Box (₱)</Label>
-                    <Input
-                      id="price_per_box"
-                      type="number"
-                      step="0.01"
-                      value={formData.price_per_box}
-                      onChange={e => setFormData(prev => ({ ...prev, price_per_box: e.target.value as string }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="vials_per_box">Vials per Box</Label>
-                    <Input
-                      id="vials_per_box"
-                      type="number"
-                      value={formData.vials_per_box}
-                      onChange={e => setFormData(prev => ({ ...prev, vials_per_box: e.target.value as string }))}
-                      required
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="image_url">Product Image</Label>
-                  <ImageUpload
-                    currentImageUrl={formData.image_url || undefined}
-                    onImageUploadedAction={(url: string) => setFormData(prev => ({ ...prev, image_url: url }))}
-                    onImageRemovedAction={() => setFormData(prev => ({ ...prev, image_url: '' }))}
-                    disabled={isSubmitting}
-                  />
-                  <p className="mt-2 text-xs text-gray-500">
-                    Upload a high-quality image of your product. Recommended size: 800x600px
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="specifications">Specifications (JSON)</Label>
-                  <Textarea
-                    id="specifications"
-                    value={formData.specifications}
-                    onChange={e => setFormData(prev => ({ ...prev, specifications: e.target.value as string }))}
-                    rows={4}
-                    placeholder='{"purity": "99%", "storage": "2-8°C", "shelf_life": "24 months"}'
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button type="button" variant="outline" onClick={handleDialogClose}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingProduct ? 'Update Product' : 'Add Product'}
-                  </Button>
-                </div>
-              </form>
+                </form>
+              </div>
+              <div className="mt-4 flex flex-shrink-0 justify-end space-x-2 border-t border-gray-200 pt-4">
+                <Button type="button" variant="outline" onClick={handleDialogClose}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                >
+                  {isSubmitting
+                    ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                          {editingProduct ? 'Updating...' : 'Creating...'}
+                        </>
+                      )
+                    : (
+                        <>
+                          <Package className="mr-2 h-4 w-4" />
+                          {editingProduct ? 'Update Product' : 'Add Product'}
+                        </>
+                      )}
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         </div>

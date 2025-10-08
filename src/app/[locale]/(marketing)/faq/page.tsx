@@ -242,7 +242,7 @@ export default function FAQPage() {
                 📧 support@mamamicalglow.com
               </Badge>
               <Badge variant="outline" className="border-green-300 text-green-700">
-                📞 +63 912 345 6789
+                📞 +63 915 490 1224
               </Badge>
             </div>
           </CardContent>

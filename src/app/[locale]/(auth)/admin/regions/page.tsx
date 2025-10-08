@@ -377,7 +377,7 @@ export default function AdminRegionsPage() {
                 </div>
                 <div>
                   <Label htmlFor="whats">WhatsApp Number</Label>
-                  <Input id="whats" placeholder="e.g. +63 912 345 6789" value={form.whatsapp_number} onChange={e => setForm(f => ({ ...f, whatsapp_number: e.target.value }))} />
+                  <Input id="whats" placeholder="e.g. +63 915 490 1224" value={form.whatsapp_number} onChange={e => setForm(f => ({ ...f, whatsapp_number: e.target.value }))} />
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button onClick={handleCreate} disabled={isSaving || !form.name.trim() || !form.region.trim() || !form.city.trim()}>
@@ -468,7 +468,7 @@ export default function AdminRegionsPage() {
                 <Label htmlFor="edit-whats">WhatsApp Number</Label>
                 <Input
                   id="edit-whats"
-                  placeholder="e.g. +63 912 345 6789"
+                  placeholder="e.g. +63 915 490 1224"
                   value={form.whatsapp_number}
                   onChange={e => setForm(f => ({ ...f, whatsapp_number: e.target.value }))}
                 />
