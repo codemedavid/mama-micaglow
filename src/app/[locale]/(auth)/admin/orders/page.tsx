@@ -144,9 +144,15 @@ export default function OrdersPage() {
     try {
       setLoading(true);
 
-      // Fetch regular orders (group buy and individual) - simplified query first
-      const { data: regularOrders, error: regularError } = await supabase
+      // Fetch group buy orders
+      const { data: groupBuyOrders, error: groupBuyError } = await supabase
         .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Fetch individual orders
+      const { data: individualOrders, error: individualError } = await supabase
+        .from('individual_orders')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -156,13 +162,14 @@ export default function OrdersPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (regularError && subGroupError) {
-        // Both failed
+      if (groupBuyError && individualError && subGroupError) {
+        // All failed
         setOrders([]);
       } else {
-        // Combine both order types
+        // Combine all order types
         const combined = [
-          ...(regularOrders || []),
+          ...(groupBuyOrders || []),
+          ...(individualOrders || []),
           ...(subGroupOrders || []),
         ];
 
@@ -192,18 +199,26 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-      // Try updating regular orders first
-      const { error: regularError } = await supabase
+      // Try updating group buy orders first
+      const { error: groupBuyError } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId);
 
-      // If regular order update failed, try sub-group orders
-      if (regularError) {
-        await supabase
-          .from('sub_group_orders')
+      // If group buy order update failed, try individual orders
+      if (groupBuyError) {
+        const { error: individualError } = await supabase
+          .from('individual_orders')
           .update({ status: newStatus })
           .eq('id', orderId);
+
+        // If individual order update failed, try sub-group orders
+        if (individualError) {
+          await supabase
+            .from('sub_group_orders')
+            .update({ status: newStatus })
+            .eq('id', orderId);
+        }
       }
 
       await fetchOrders();
@@ -214,18 +229,26 @@ export default function OrdersPage() {
 
   const updatePaymentStatus = async (orderId: number, newPaymentStatus: string) => {
     try {
-      // Try updating regular orders first
-      const { error: regularError } = await supabase
+      // Try updating group buy orders first
+      const { error: groupBuyError } = await supabase
         .from('orders')
         .update({ payment_status: newPaymentStatus })
         .eq('id', orderId);
 
-      // If regular order update failed, try sub-group orders
-      if (regularError) {
-        await supabase
-          .from('sub_group_orders')
+      // If group buy order update failed, try individual orders
+      if (groupBuyError) {
+        const { error: individualError } = await supabase
+          .from('individual_orders')
           .update({ payment_status: newPaymentStatus })
           .eq('id', orderId);
+
+        // If individual order update failed, try sub-group orders
+        if (individualError) {
+          await supabase
+            .from('sub_group_orders')
+            .update({ payment_status: newPaymentStatus })
+            .eq('id', orderId);
+        }
       }
 
       await fetchOrders();
@@ -238,28 +261,41 @@ export default function OrdersPage() {
     try {
       setIsDeleting(true);
 
-      // Try to delete from regular orders first
+      // Try to delete from group buy orders first
       await supabase
         .from('order_items')
         .delete()
         .eq('order_id', orderId);
 
-      const { error: regularOrderError } = await supabase
+      const { error: groupBuyError } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId);
 
-      // If regular order deletion failed, try sub-group orders
-      if (regularOrderError) {
+      // If group buy order deletion failed, try individual orders
+      if (groupBuyError) {
         await supabase
-          .from('sub_group_order_items')
+          .from('individual_order_items')
           .delete()
           .eq('order_id', orderId);
 
-        await supabase
-          .from('sub_group_orders')
+        const { error: individualError } = await supabase
+          .from('individual_orders')
           .delete()
           .eq('id', orderId);
+
+        // If individual order deletion failed, try sub-group orders
+        if (individualError) {
+          await supabase
+            .from('sub_group_order_items')
+            .delete()
+            .eq('order_id', orderId);
+
+          await supabase
+            .from('sub_group_orders')
+            .delete()
+            .eq('id', orderId);
+        }
       }
 
       await fetchOrders();
@@ -276,8 +312,8 @@ export default function OrdersPage() {
     try {
       setIsDeleting(true);
 
-      // Delete from both regular and sub-group orders
-      // Regular orders
+      // Delete from all order types
+      // Group buy orders
       await supabase
         .from('order_items')
         .delete()
@@ -285,6 +321,17 @@ export default function OrdersPage() {
 
       await supabase
         .from('orders')
+        .delete()
+        .in('id', selectedOrders);
+
+      // Individual orders
+      await supabase
+        .from('individual_order_items')
+        .delete()
+        .in('order_id', selectedOrders);
+
+      await supabase
+        .from('individual_orders')
         .delete()
         .in('id', selectedOrders);
 
