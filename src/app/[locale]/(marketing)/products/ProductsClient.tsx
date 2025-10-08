@@ -323,7 +323,7 @@ export function ProductsClient({ products }: ProductsClientProps) {
                               </div>
                               {!product.inStock && (
                                 <div className="absolute top-2 right-2">
-                                  <Badge variant="destructive">Out of Stock</Badge>
+                                  <Badge variant="destructive">Not Available</Badge>
                                 </div>
                               )}
                               <div className="absolute top-2 left-2">
@@ -368,7 +368,7 @@ export function ProductsClient({ products }: ProductsClientProps) {
                                     onClick={() => handleAddToCart(product)}
                                   >
                                     <ShoppingCart className="mr-2 h-4 w-4" />
-                                    Add to Cart
+                                    {product.inStock ? 'Add to Cart' : 'Unavailable'}
                                   </Button>
                                   <Button variant="outline" size="icon" asChild>
                                     <Link href={`/products/${product.id}`}>

@@ -88,13 +88,19 @@ export function IndividualBuySection({ products }: IndividualBuySectionProps) {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
+                    {!product.isActive && (
+                      <Badge variant="secondary" className="border-red-200 bg-red-50 text-red-700">
+                        Not Available
+                      </Badge>
+                    )}
                     <Button
                       size="sm"
                       className="flex-1"
                       onClick={() => handleAddToCart(product)}
+                      disabled={!product.isActive}
                     >
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
+                      {product.isActive ? 'Add to Cart' : 'Unavailable'}
                     </Button>
                     <Button size="icon" variant="outline" asChild>
                       <Link href={`/products/${product.id}`}>
@@ -156,13 +162,19 @@ export function IndividualBuySection({ products }: IndividualBuySectionProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
+                  {!product.isActive && (
+                    <Badge variant="secondary" className="border-red-200 bg-red-50 text-red-700">
+                      Not Available
+                    </Badge>
+                  )}
                   <div className="flex gap-2">
                     <Button
                       className="flex-1"
                       onClick={() => handleAddToCart(product)}
+                      disabled={!product.isActive}
                     >
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
+                      {product.isActive ? 'Add to Cart' : 'Unavailable'}
                     </Button>
                     <Button variant="outline" size="icon" asChild>
                       <Link href={`/products/${product.id}`}>

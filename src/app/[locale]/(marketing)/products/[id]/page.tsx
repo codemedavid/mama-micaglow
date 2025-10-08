@@ -124,7 +124,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="mb-2 flex items-center gap-2">
                 <Badge variant="secondary">{transformedProduct.category}</Badge>
                 {!transformedProduct.inStock && (
-                  <Badge variant="destructive">Out of Stock</Badge>
+                  <Badge variant="destructive">Not Available</Badge>
                 )}
               </div>
               <h1 className="mb-2 pt-4 text-3xl font-bold">{transformedProduct.name}</h1>
@@ -196,7 +196,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   disabled={!transformedProduct.inStock}
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart
+                  {transformedProduct.inStock ? 'Add to Cart' : 'Unavailable'}
                 </Button>
               </div>
             </div>

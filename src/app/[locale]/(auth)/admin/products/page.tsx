@@ -120,6 +120,7 @@ export default function AdminProductsPage() {
     price_per_vial: '',
     price_per_box: '',
     vials_per_box: '10',
+    is_active: true,
     image_url: '',
     specifications: '',
   });
@@ -152,6 +153,7 @@ export default function AdminProductsPage() {
       price_per_vial: '',
       price_per_box: '',
       vials_per_box: '10',
+      is_active: true,
       image_url: '',
       specifications: '',
     }));
@@ -180,6 +182,7 @@ export default function AdminProductsPage() {
         price_per_vial: Number.parseFloat(formData.price_per_vial),
         price_per_box: Number.parseFloat(formData.price_per_box),
         vials_per_box: Number.parseInt(formData.vials_per_box),
+        is_active: formData.is_active,
         image_url: formData.image_url || null,
         specifications: formData.specifications ? JSON.parse(formData.specifications) : null,
         created_by: 1, // This should be the current user's ID
@@ -222,6 +225,7 @@ export default function AdminProductsPage() {
       price_per_vial: product.price_per_vial.toString(),
       price_per_box: product.price_per_box.toString(),
       vials_per_box: product.vials_per_box.toString(),
+      is_active: product.is_active,
       image_url: product.image_url || '',
       specifications: product.specifications ? JSON.stringify(product.specifications, null, 2) : '',
     });
@@ -402,6 +406,19 @@ export default function AdminProductsPage() {
                         required
                       />
                     </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={formData.is_active}
+                      onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                      className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <Label htmlFor="is_active" className="cursor-pointer">
+                      Product is available for purchase
+                    </Label>
                   </div>
 
                   <div>

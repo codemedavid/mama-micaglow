@@ -27,7 +27,6 @@ export async function getAllProducts(): Promise<Product[]> {
     const { data: products, error } = await supabase
       .from('products')
       .select('*')
-      .eq('is_active', true)
       .order('name');
 
     if (error) {
