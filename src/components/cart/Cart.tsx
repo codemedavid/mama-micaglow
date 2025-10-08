@@ -396,7 +396,7 @@ export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpe
             <SubGroupCheckout
               batchId={Number.parseInt(batchId)}
               batchName={`Sub-Group Batch #${batchId}`}
-              regionWhatsapp={firstSubGroupItem.regionWhatsapp || '6391549012244'}
+              regionWhatsapp={firstSubGroupItem.regionWhatsapp || '639154901224'}
               subGroupId={firstSubGroupItem.subGroupId}
               subGroupName={firstSubGroupItem.subGroupName || 'Sub-Group'}
               isOpen={isSubGroupCheckoutOpen}

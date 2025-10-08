@@ -276,7 +276,7 @@ export default function TrackOrderPage() {
     }
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/6391549012244?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/639154901224?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
   };
 

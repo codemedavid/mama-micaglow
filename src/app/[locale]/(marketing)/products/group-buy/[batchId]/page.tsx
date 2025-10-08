@@ -612,7 +612,7 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
                           className="bg-green-600 text-white hover:bg-green-700"
                         >
                           <a
-                            href={`https://wa.me/6391549012244?text=Hi, I'd like to pay for my order ${userOrder.order_code}. My total is ₱${userOrder.total_amount.toLocaleString()}.`}
+                            href={`https://wa.me/639154901224?text=Hi, I'd like to pay for my order ${userOrder.order_code}. My total is ₱${userOrder.total_amount.toLocaleString()}.`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >

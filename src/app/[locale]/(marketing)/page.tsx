@@ -177,7 +177,7 @@ export default async function Index(props: IIndexProps) {
               Still have questions? We're here to help!
             </p>
             <Button variant="outline" asChild>
-              <Link href="https://wa.me/6391549012244" target="_blank" rel="noopener noreferrer">
+              <Link href="https://wa.me/639154901224" target="_blank" rel="noopener noreferrer">
                 <HelpCircle className="mr-2 h-4 w-4" />
                 Contact Us on WhatsApp
               </Link>
