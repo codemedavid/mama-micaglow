@@ -72,10 +72,27 @@ type Region = {
 export default function RegionsSection() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
+  const [regionsEnabled, setRegionsEnabled] = useState(true);
 
   useEffect(() => {
     const fetchRegions = async () => {
       try {
+        // First check if regions feature is enabled
+        const { data: settingData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'regions_enabled')
+          .single();
+
+        const isEnabled = settingData?.value === 'true';
+        setRegionsEnabled(isEnabled);
+
+        // If regions are disabled, don't fetch regions data
+        if (!isEnabled) {
+          setLoading(false);
+          return;
+        }
+
         const { data: regionsData, error: regionsError } = await supabase
           .from('sub_groups')
           .select(`
@@ -135,6 +152,11 @@ export default function RegionsSection() {
 
     fetchRegions();
   }, []);
+
+  // Don't render anything if regions feature is disabled
+  if (!regionsEnabled) {
+    return null;
+  }
 
   const getProgressPercentage = (batch: SubGroupBatch) => {
     if (batch.target_vials === 0) {

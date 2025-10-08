@@ -279,9 +279,27 @@ export function useRealtimeSubGroupBatches() {
 export function useRealtimeRegions() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
+  const [regionsEnabled, setRegionsEnabled] = useState(true);
 
   const fetchRegions = useCallback(async () => {
     try {
+      // First check if regions feature is enabled
+      const { data: settingData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'regions_enabled')
+        .single();
+
+      const isEnabled = settingData?.value === 'true';
+      setRegionsEnabled(isEnabled);
+
+      // If regions are disabled, don't fetch regions data
+      if (!isEnabled) {
+        setRegions([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('sub_groups')
         .select(`
@@ -371,6 +389,7 @@ export function useRealtimeRegions() {
   return {
     regions,
     loading,
+    regionsEnabled,
     refetch: fetchRegions,
   };
 }

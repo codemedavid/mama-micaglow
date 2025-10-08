@@ -16,7 +16,7 @@ import { useRealtimeRegions } from '@/hooks/useRealtimeSubGroupBatch';
 // Remove the local Region type since we're using the one from the hook
 
 export default function SubGroupsPage() {
-  const { regions, loading } = useRealtimeRegions();
+  const { regions, loading, regionsEnabled } = useRealtimeRegions();
 
   if (loading) {
     return (
@@ -50,6 +50,35 @@ export default function SubGroupsPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if regions feature is disabled
+  if (!regionsEnabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4 py-20">
+          <div className="mb-16 text-center">
+            <Badge className="mb-4 border-gray-200 bg-gray-100 text-gray-800">
+              <AlertCircle className="mr-1 h-3 w-3" />
+              Feature Disabled
+            </Badge>
+            <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
+              Regional Sub-Groups Not Available
+            </h1>
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+              This feature is currently disabled. Please check back later or contact support for more information.
+            </p>
+            <div className="mt-8">
+              <Link href="/products">
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  Browse Products
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

@@ -143,26 +143,37 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch regular orders (group buy and individual) - simplified query first
+      const { data: regularOrders, error: regularError } = await supabase
         .from('orders')
-        .select(`
-          *,
-          batch:group_buy_batches(id, name, status),
-          user:users(id, clerk_id, email, first_name, last_name),
-          order_items(
-            *,
-            product:products(id, name, category)
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        // Handle error if needed
+      // Fetch sub-group orders - simplified query first
+      const { data: subGroupOrders, error: subGroupError } = await supabase
+        .from('sub_group_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (regularError && subGroupError) {
+        // Both failed
+        setOrders([]);
       } else {
-        setOrders(data || []);
+        // Combine both order types
+        const combined = [
+          ...(regularOrders || []),
+          ...(subGroupOrders || []),
+        ];
+
+        // Sort by created_at descending
+        combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setOrders(combined);
       }
     } catch {
       // Handle error if needed
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -181,16 +192,21 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-      const { error } = await supabase
+      // Try updating regular orders first
+      const { error: regularError } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId);
 
-      if (error) {
-        // Handle error if needed
-      } else {
-        await fetchOrders();
+      // If regular order update failed, try sub-group orders
+      if (regularError) {
+        await supabase
+          .from('sub_group_orders')
+          .update({ status: newStatus })
+          .eq('id', orderId);
       }
+
+      await fetchOrders();
     } catch {
       // Handle error if needed
     }
@@ -198,16 +214,21 @@ export default function OrdersPage() {
 
   const updatePaymentStatus = async (orderId: number, newPaymentStatus: string) => {
     try {
-      const { error } = await supabase
+      // Try updating regular orders first
+      const { error: regularError } = await supabase
         .from('orders')
         .update({ payment_status: newPaymentStatus })
         .eq('id', orderId);
 
-      if (error) {
-        // Handle error if needed
-      } else {
-        await fetchOrders();
+      // If regular order update failed, try sub-group orders
+      if (regularError) {
+        await supabase
+          .from('sub_group_orders')
+          .update({ payment_status: newPaymentStatus })
+          .eq('id', orderId);
       }
+
+      await fetchOrders();
     } catch {
       // Handle error if needed
     }
@@ -216,32 +237,36 @@ export default function OrdersPage() {
   const deleteOrder = async (orderId: number) => {
     try {
       setIsDeleting(true);
-      // First delete order items
-      const { error: itemsError } = await supabase
+
+      // Try to delete from regular orders first
+      await supabase
         .from('order_items')
         .delete()
         .eq('order_id', orderId);
 
-      if (itemsError) {
-        console.error('Error deleting order items:', itemsError);
-        return;
-      }
-
-      // Then delete the order
-      const { error: orderError } = await supabase
+      const { error: regularOrderError } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId);
 
-      if (orderError) {
-        console.error('Error deleting order:', orderError);
-      } else {
-        await fetchOrders();
-        setDeleteDialogOpen(false);
-        setOrderToDelete(null);
+      // If regular order deletion failed, try sub-group orders
+      if (regularOrderError) {
+        await supabase
+          .from('sub_group_order_items')
+          .delete()
+          .eq('order_id', orderId);
+
+        await supabase
+          .from('sub_group_orders')
+          .delete()
+          .eq('id', orderId);
       }
-    } catch (error) {
-      console.error('Error deleting order:', error);
+
+      await fetchOrders();
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
+    } catch {
+      // Handle error if needed
     } finally {
       setIsDeleting(false);
     }
@@ -250,32 +275,35 @@ export default function OrdersPage() {
   const deleteSelectedOrders = async () => {
     try {
       setIsDeleting(true);
-      // Delete order items for all selected orders
-      const { error: itemsError } = await supabase
+
+      // Delete from both regular and sub-group orders
+      // Regular orders
+      await supabase
         .from('order_items')
         .delete()
         .in('order_id', selectedOrders);
 
-      if (itemsError) {
-        console.error('Error deleting order items:', itemsError);
-        return;
-      }
-
-      // Then delete the orders
-      const { error: ordersError } = await supabase
+      await supabase
         .from('orders')
         .delete()
         .in('id', selectedOrders);
 
-      if (ordersError) {
-        console.error('Error deleting orders:', ordersError);
-      } else {
-        await fetchOrders();
-        setSelectedOrders([]);
-        setDeleteDialogOpen(false);
-      }
-    } catch (error) {
-      console.error('Error deleting orders:', error);
+      // Sub-group orders
+      await supabase
+        .from('sub_group_order_items')
+        .delete()
+        .in('order_id', selectedOrders);
+
+      await supabase
+        .from('sub_group_orders')
+        .delete()
+        .in('id', selectedOrders);
+
+      await fetchOrders();
+      setSelectedOrders([]);
+      setDeleteDialogOpen(false);
+    } catch {
+      // Handle error if needed
     } finally {
       setIsDeleting(false);
     }
