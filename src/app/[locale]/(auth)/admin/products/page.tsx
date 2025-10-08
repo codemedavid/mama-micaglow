@@ -69,6 +69,7 @@ const peptideNames = [
   'BPC-157',
   'Tirzepatide',
   'Semaglutide',
+  'Retatrutide',
   'TB-500',
   'Ipamorelin',
   'CJC-1295',
