@@ -4,9 +4,12 @@ import {
   AlertCircle,
   DollarSign,
   Edit,
+  Filter,
   Package,
   Plus,
+  Search,
   Trash2,
+  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -62,6 +65,41 @@ const categories = [
   'Sleep & Recovery',
 ];
 
+const peptideNames = [
+  'BPC-157',
+  'Tirzepatide',
+  'Semaglutide',
+  'TB-500',
+  'Ipamorelin',
+  'CJC-1295',
+  'GHRP-6',
+  'GHRP-2',
+  'IGF-1 LR3',
+  'MGF',
+  'PEG-MGF',
+  'Thymosin Alpha-1',
+  'Thymosin Beta-4',
+  'AOD-9604',
+  'HGH Fragment 176-191',
+  'Melanotan II',
+  'PT-141',
+  'DSIP',
+  'Epitalon',
+  'Thymalin',
+  'Bremelanotide',
+  'Oxytocin',
+  'Vasopressin',
+  'Selank',
+  'Semax',
+  'Cerebrolysin',
+  'Cortexin',
+  'P21',
+  'Dihexa',
+  'NAD+',
+  'Glutathione',
+  'Bacteriostatic Water',
+];
+
 export default function AdminProductsPage() {
   const { isAdmin, loading: roleLoading } = useRole();
   const router = useRouter();
@@ -70,6 +108,10 @@ export default function AdminProductsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [peptideFilter, setPeptideFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -184,6 +226,33 @@ export default function AdminProductsPage() {
     });
     setIsDialogOpen(true);
   };
+  // Filter products based on search query and all filters
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = searchQuery === ''
+      || product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      || product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      || product.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesPeptide = peptideFilter === 'all'
+      || product.name.toLowerCase().includes(peptideFilter.toLowerCase());
+
+    const matchesCategory = categoryFilter === 'all'
+      || product.category === categoryFilter;
+
+    const matchesStatus = statusFilter === 'all'
+      || (statusFilter === 'active' && product.is_active)
+      || (statusFilter === 'inactive' && !product.is_active);
+
+    return matchesSearch && matchesPeptide && matchesCategory && matchesStatus;
+  });
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setPeptideFilter('all');
+    setCategoryFilter('all');
+    setStatusFilter('all');
+  };
+
   const handleDelete = async (productId: number) => {
     try {
       const { error } = await supabase
@@ -389,9 +458,135 @@ export default function AdminProductsPage() {
           </Dialog>
         </div>
 
+        {/* Filters */}
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search products by name, description, or category..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pr-10 pl-10"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filters */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+
+                {/* Peptide Filter */}
+                <Select value={peptideFilter} onValueChange={setPeptideFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by peptide" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Peptides</SelectItem>
+                    {peptideNames.map(peptide => (
+                      <SelectItem key={peptide} value={peptide}>
+                        {peptide}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Category Filter */}
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Results Count and Active Filters */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing
+                {' '}
+                {filteredProducts.length}
+                {' '}
+                of
+                {' '}
+                {products.length}
+                {' '}
+                products
+              </div>
+
+              {/* Active Filters Indicator */}
+              {(searchQuery || peptideFilter !== 'all' || categoryFilter !== 'all' || statusFilter !== 'all') && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Active filters:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {searchQuery && (
+                      <Badge variant="secondary" className="text-xs">
+                        Search: "
+                        {searchQuery}
+                        "
+                      </Badge>
+                    )}
+                    {peptideFilter !== 'all' && (
+                      <Badge variant="secondary" className="text-xs">
+                        Peptide:
+                        {' '}
+                        {peptideFilter}
+                      </Badge>
+                    )}
+                    {categoryFilter !== 'all' && (
+                      <Badge variant="secondary" className="text-xs">
+                        Category:
+                        {' '}
+                        {categoryFilter}
+                      </Badge>
+                    )}
+                    {statusFilter !== 'all' && (
+                      <Badge variant="secondary" className="text-xs">
+                        Status:
+                        {' '}
+                        {statusFilter}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Products Grid */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {products.map(product => (
+          {filteredProducts.map(product => (
             <Card key={product.id} className="group border-0 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -506,6 +701,25 @@ export default function AdminProductsPage() {
             </Card>
           ))}
         </div>
+
+        {filteredProducts.length === 0 && products.length > 0 && (
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-purple-200">
+              <Search className="h-12 w-12 text-purple-600" />
+            </div>
+            <h3 className="mb-3 text-2xl font-bold text-gray-900">No products found</h3>
+            <p className="mx-auto mb-8 max-w-md text-gray-600">
+              No products match your current search or filter criteria. Try adjusting your search terms or filters.
+            </p>
+            <Button
+              onClick={clearFilters}
+              variant="outline"
+              className="border-purple-300 text-purple-600 hover:bg-purple-50"
+            >
+              Clear Filters
+            </Button>
+          </div>
+        )}
 
         {products.length === 0 && (
           <div className="py-16 text-center">
