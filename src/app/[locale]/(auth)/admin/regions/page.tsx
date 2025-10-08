@@ -1,6 +1,6 @@
 'use client';
 
-import { Edit, MoreHorizontal, Package, Plus, Save, Trash2, Users } from 'lucide-react';
+import { Edit, MoreHorizontal, Package, Plus, Save, Settings, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,8 @@ export default function AdminRegionsPage() {
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
   const [isBatchesOpen, setIsBatchesOpen] = useState(false);
   const [loadingBatches, setLoadingBatches] = useState(false);
+  const [regionsEnabled, setRegionsEnabled] = useState(true);
+  const [savingToggle, setSavingToggle] = useState(false);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -117,6 +119,16 @@ export default function AdminRegionsPage() {
   useEffect(() => {
     const load = async () => {
       try {
+        // Fetch regions setting
+        const { data: settingData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'regions_enabled')
+          .single();
+
+        const isEnabled = settingData?.value === 'true';
+        setRegionsEnabled(isEnabled);
+
         const [{ data: regionsData }, { data: hostsData }] = await Promise.all([
           supabase.from('sub_groups').select('*').order('created_at', { ascending: false }),
           supabase.from('users').select('id, first_name, last_name, email, role').eq('role', 'host'),
@@ -238,8 +250,28 @@ export default function AdminRegionsPage() {
       if (!error && data) {
         setRegions(prev => prev.map(r => r.id === region.id ? data as Region : r));
       }
-    } catch (error) {
-      console.error('Error toggling region status:', error);
+    } catch {
+      // Handle error if needed
+    }
+  };
+
+  const toggleRegionsFeature = async () => {
+    try {
+      setSavingToggle(true);
+      const newValue = !regionsEnabled;
+
+      const { error } = await supabase
+        .from('site_settings')
+        .update({ value: newValue.toString() })
+        .eq('key', 'regions_enabled');
+
+      if (!error) {
+        setRegionsEnabled(newValue);
+      }
+    } catch {
+      // Handle error if needed
+    } finally {
+      setSavingToggle(false);
     }
   };
 
@@ -258,10 +290,43 @@ export default function AdminRegionsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Regions</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-gray-900">Regions</h1>
+            <div className="flex items-center space-x-3 rounded-lg border border-gray-200 bg-white/80 p-3 shadow-sm">
+              <div className="flex items-center space-x-2">
+                <Settings className="h-4 w-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">Regions Feature</span>
+                <Badge
+                  variant={regionsEnabled ? 'default' : 'secondary'}
+                  className={regionsEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
+                >
+                  {regionsEnabled ? 'Enabled' : 'Disabled'}
+                </Badge>
+              </div>
+              <button
+                type="button"
+                onClick={toggleRegionsFeature}
+                disabled={savingToggle}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:outline-none ${
+                  regionsEnabled ? 'bg-purple-600' : 'bg-gray-200'
+                }`}
+                role="switch"
+                aria-checked={regionsEnabled}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    regionsEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800">
+              <Button
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                disabled={!regionsEnabled}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 {' '}
                 New Region
@@ -449,88 +514,103 @@ export default function AdminRegionsPage() {
 
         {fetching
           ? (<div className="py-20 text-center text-gray-600">Loading regions…</div>)
-          : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {regions.map(r => (
-                  <Card key={r.id} className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
-                    <CardHeader className="flex items-center justify-between">
-                      <CardTitle className="text-lg text-gray-900">{r.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge className={r.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                          {r.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                        <div className="flex items-center gap-2">
-                          {r.host_id && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openBatchesDialog(r)}
-                              className="border-purple-200 text-purple-600 hover:bg-purple-50"
-                            >
-                              <Package className="mr-2 h-4 w-4" />
-                              View Batches
-                            </Button>
-                          )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditDialog(r)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toggleActiveStatus(r)}>
-                                {r.is_active ? 'Deactivate' : 'Activate'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(r.id)}
-                                className="text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="mb-3 text-sm text-gray-700">{r.description}</p>
-                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-                        <div>
-                          <span className="text-gray-500">Region:</span>
-                          {' '}
-                          {r.region}
-                        </div>
-                        <div>
-                          <span className="text-gray-500">City:</span>
-                          {' '}
-                          {r.city}
-                        </div>
-                        <div>
-                          <span className="text-gray-500">WhatsApp:</span>
-                          {' '}
-                          {r.whatsapp_number || '—'}
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Host:</span>
-                          {' '}
-                          {r.host_id ? hosts.find(h => h.id === r.host_id)?.email || 'Unknown' : 'Unassigned'}
-                        </div>
-                      </div>
+          : !regionsEnabled
+              ? (
+                  <Card className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
+                    <CardContent className="py-12 text-center">
+                      <Settings className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                      <h3 className="mb-2 text-xl font-semibold text-gray-900">Regions Feature Disabled</h3>
+                      <p className="mb-4 text-gray-600">
+                        The regions feature is currently disabled. Enable it using the toggle above to manage regional sub-groups.
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        When disabled, the regional sub-groups section will be hidden from the website.
+                      </p>
                     </CardContent>
                   </Card>
-                ))}
-                {regions.length === 0 && (
-                  <Card className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
-                    <CardContent className="py-12 text-center text-gray-600">No regions yet. Create one!</CardContent>
-                  </Card>
+                )
+              : (
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {regions.map(r => (
+                      <Card key={r.id} className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
+                        <CardHeader className="flex items-center justify-between">
+                          <CardTitle className="text-lg text-gray-900">{r.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Badge className={r.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                              {r.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                            <div className="flex items-center gap-2">
+                              {r.host_id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openBatchesDialog(r)}
+                                  className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                                >
+                                  <Package className="mr-2 h-4 w-4" />
+                                  View Batches
+                                </Button>
+                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEditDialog(r)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => toggleActiveStatus(r)}>
+                                    {r.is_active ? 'Deactivate' : 'Activate'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(r.id)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="mb-3 text-sm text-gray-700">{r.description}</p>
+                          <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                            <div>
+                              <span className="text-gray-500">Region:</span>
+                              {' '}
+                              {r.region}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">City:</span>
+                              {' '}
+                              {r.city}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">WhatsApp:</span>
+                              {' '}
+                              {r.whatsapp_number || '—'}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Host:</span>
+                              {' '}
+                              {r.host_id ? hosts.find(h => h.id === r.host_id)?.email || 'Unknown' : 'Unassigned'}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {regions.length === 0 && (
+                      <Card className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
+                        <CardContent className="py-12 text-center text-gray-600">No regions yet. Create one!</CardContent>
+                      </Card>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
         {/* Batches Dialog */}
         <Dialog open={isBatchesOpen} onOpenChange={setIsBatchesOpen}>
