@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Search,
   ShoppingCart,
+  Trash2,
   Truck,
   X,
 } from 'lucide-react';
@@ -20,6 +21,14 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -127,6 +136,9 @@ export default function OrdersPage() {
 
   // UI states
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -198,6 +210,91 @@ export default function OrdersPage() {
       }
     } catch {
       // Handle error if needed
+    }
+  };
+
+  const deleteOrder = async (orderId: number) => {
+    try {
+      setIsDeleting(true);
+      // First delete order items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (itemsError) {
+        console.error('Error deleting order items:', itemsError);
+        return;
+      }
+
+      // Then delete the order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (orderError) {
+        console.error('Error deleting order:', orderError);
+      } else {
+        await fetchOrders();
+        setDeleteDialogOpen(false);
+        setOrderToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const deleteSelectedOrders = async () => {
+    try {
+      setIsDeleting(true);
+      // Delete order items for all selected orders
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .in('order_id', selectedOrders);
+
+      if (itemsError) {
+        console.error('Error deleting order items:', itemsError);
+        return;
+      }
+
+      // Then delete the orders
+      const { error: ordersError } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', selectedOrders);
+
+      if (ordersError) {
+        console.error('Error deleting orders:', ordersError);
+      } else {
+        await fetchOrders();
+        setSelectedOrders([]);
+        setDeleteDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Error deleting orders:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const openDeleteDialog = (orderId?: number) => {
+    if (orderId) {
+      setOrderToDelete(orderId);
+    } else {
+      setOrderToDelete(null);
+    }
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (orderToDelete) {
+      deleteOrder(orderToDelete);
+    } else {
+      deleteSelectedOrders();
     }
   };
 
@@ -362,6 +459,19 @@ export default function OrdersPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Bulk Delete Button */}
+              {selectedOrders.length > 0 && (
+                <Button
+                  onClick={() => openDeleteDialog()}
+                  variant="destructive"
+                  className="bg-red-600 shadow-lg hover:bg-red-700"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected (
+                  {selectedOrders.length}
+                  )
+                </Button>
+              )}
               {/* Quick Batch Filter */}
               <div className="hidden items-center gap-2 md:flex">
                 <Label htmlFor="batch-filter-quick" className="text-sm text-muted-foreground">Batch</Label>
@@ -701,6 +811,14 @@ export default function OrdersPage() {
                               >
                                 <Phone className="h-4 w-4" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDeleteDialog(order.id)}
+                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                               <Select value={order.status} onValueChange={value => updateOrderStatus(order.id, value)}>
                                 <SelectTrigger className="h-8 w-32">
                                   <SelectValue />
@@ -788,6 +906,39 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                {orderToDelete
+                  ? 'Are you sure you want to delete this order? This action cannot be undone.'
+                  : `Are you sure you want to delete ${selectedOrders.length} selected order(s)? This action cannot be undone.`}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setOrderToDelete(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
