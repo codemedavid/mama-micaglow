@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { AuthGuard } from '@/components/AuthGuard';
 import GroupBuyCheckout from '@/components/GroupBuyCheckout';
@@ -31,6 +32,7 @@ import { useCart } from '@/contexts/CartContext';
 
 export function FloatingCart() {
   const { state, dispatch } = useCart();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -59,6 +61,10 @@ export function FloatingCart() {
   const hasIndividualItems = () => getIndividualItems().length > 0;
   const openGroupBuyCheckout = () => setIsCheckoutOpen(true);
   const closeGroupBuyCheckout = () => setIsCheckoutOpen(false);
+  const handleIndividualCheckout = () => {
+    setIsOpen(false);
+    router.push('/checkout');
+  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -285,11 +291,9 @@ export function FloatingCart() {
                           )
                         : hasIndividualItems()
                           ? (
-                              <Button className="w-full" asChild>
-                                <Link href="/checkout">
-                                  <CreditCard className="mr-2 h-4 w-4" />
-                                  Proceed to Checkout
-                                </Link>
+                              <Button className="w-full" onClick={handleIndividualCheckout}>
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Proceed to Checkout
                               </Button>
                             )
                           : (

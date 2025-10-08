@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { AuthGuard } from '@/components/AuthGuard';
 import GroupBuyCheckout from '@/components/GroupBuyCheckout';
@@ -37,6 +38,7 @@ type CartProps = {
 
 export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpenChange }: CartProps = {}) {
   const { state, dispatch } = useCart();
+  const router = useRouter();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSubGroupCheckoutOpen, setIsSubGroupCheckoutOpen] = useState(false);
@@ -87,6 +89,10 @@ export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpe
   const hasSubGroupItems = () => getSubGroupItems().length > 0;
   const openSubGroupCheckout = () => setIsSubGroupCheckoutOpen(true);
   const closeSubGroupCheckout = () => setIsSubGroupCheckoutOpen(false);
+  const handleIndividualCheckout = () => {
+    setIsOpen(false);
+    router.push('/checkout');
+  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -329,11 +335,9 @@ export function Cart({ isOpen: externalIsOpen, onOpenChangeAction: externalOnOpe
                         )
                       : hasIndividualItems()
                         ? (
-                            <Button className="w-full" asChild>
-                              <Link href="/checkout">
-                                <CreditCard className="mr-2 h-4 w-4" />
-                                Proceed to Checkout
-                              </Link>
+                            <Button className="w-full" onClick={handleIndividualCheckout}>
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Proceed to Checkout
                             </Button>
                           )
                         : (
