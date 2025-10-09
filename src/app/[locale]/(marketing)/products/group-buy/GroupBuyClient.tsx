@@ -43,6 +43,11 @@ type Product = {
   price_per_box: number;
   vials_per_box: number;
   image_url: string | null;
+  specifications?: {
+    concentration?: string;
+    dosage?: string;
+    [key: string]: any;
+  } | null;
 };
 
 type BatchProduct = {
@@ -347,7 +352,7 @@ export default function GroupBuyClient() {
       || product.category === categoryFilter;
 
     // Dosage filter
-    const productDosage = product.specifications?.concentration || product.specifications?.dosage || '';
+    const productDosage = (product as any).specifications?.concentration || (product as any).specifications?.dosage || '';
     const matchesDosage = dosageFilter === 'all'
       || productDosage.toLowerCase().includes(dosageFilter.toLowerCase());
 
@@ -368,10 +373,13 @@ export default function GroupBuyClient() {
 
   const availableDosages = Array.from(new Set(
     activeBatch?.batch_products?.map((bp) => {
-      const dosage = bp.product?.specifications?.concentration || bp.product?.specifications?.dosage;
+      const dosage = (bp.product as any)?.specifications?.concentration || (bp.product as any)?.specifications?.dosage;
       return dosage ? `${dosage.replace(/\D/g, '')}mg` : null;
     }).filter(Boolean) || [],
   )).sort((a, b) => {
+    if (!a || !b) {
+      return 0;
+    }
     const numA = Number.parseInt(a.replace('mg', ''));
     const numB = Number.parseInt(b.replace('mg', ''));
     return numA - numB;
@@ -834,7 +842,7 @@ export default function GroupBuyClient() {
                         <SelectContent>
                           <SelectItem value="all">All Dosages</SelectItem>
                           {availableDosages.map(dosage => (
-                            <SelectItem key={dosage} value={dosage}>
+                            <SelectItem key={dosage} value={dosage || ''}>
                               {dosage}
                             </SelectItem>
                           ))}
@@ -987,9 +995,9 @@ export default function GroupBuyClient() {
                                   <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
                                     {product?.category || 'Unknown Category'}
                                   </div>
-                                  {product?.specifications && (
+                                  {(product as any)?.specifications && (
                                     <div className="inline-flex items-center rounded-full bg-blue-100/80 px-3 py-1 text-xs font-medium text-blue-700 backdrop-blur-sm">
-                                      {product.specifications.concentration || product.specifications.dosage || 'Dosage N/A'}
+                                      {(product as any).specifications.concentration || (product as any).specifications.dosage || 'Dosage N/A'}
                                     </div>
                                   )}
                                 </div>

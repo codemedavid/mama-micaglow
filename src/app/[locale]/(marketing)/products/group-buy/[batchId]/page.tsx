@@ -35,6 +35,11 @@ type Product = {
   price_per_box: number;
   vials_per_box: number;
   image_url: string | null;
+  specifications?: {
+    concentration?: string;
+    dosage?: string;
+    [key: string]: any;
+  } | null;
 };
 
 type BatchProduct = {
@@ -744,9 +749,9 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
                         <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
                           {batchProduct.product.category}
                         </div>
-                        {batchProduct.product.specifications && (
+                        {(batchProduct.product as any).specifications && (
                           <div className="inline-flex items-center rounded-full bg-blue-100/80 px-3 py-1 text-xs font-medium text-blue-700 backdrop-blur-sm">
-                            {batchProduct.product.specifications.concentration || batchProduct.product.specifications.dosage || 'Dosage N/A'}
+                            {(batchProduct.product as any).specifications.concentration || (batchProduct.product as any).specifications.dosage || 'Dosage N/A'}
                           </div>
                         )}
                       </div>

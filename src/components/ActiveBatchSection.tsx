@@ -28,6 +28,11 @@ type Product = {
   price_per_box: number;
   vials_per_box: number;
   image_url: string | null;
+  specifications?: {
+    concentration?: string;
+    dosage?: string;
+    [key: string]: any;
+  } | null;
 };
 
 type BatchProduct = {
@@ -319,9 +324,9 @@ export default function ActiveBatchSection() {
                                     <h3 className="text-lg font-semibold">{product.name}</h3>
                                     <div className="flex flex-wrap gap-2">
                                       <p className="text-sm text-muted-foreground">{product.category}</p>
-                                      {product.specifications && (
+                                      {(product as any).specifications && (
                                         <p className="text-sm font-medium text-blue-600">
-                                          {product.specifications.concentration || product.specifications.dosage || 'Dosage N/A'}
+                                          {(product as any).specifications.concentration || (product as any).specifications.dosage || 'Dosage N/A'}
                                         </p>
                                       )}
                                     </div>
