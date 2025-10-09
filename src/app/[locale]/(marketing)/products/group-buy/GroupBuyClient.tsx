@@ -9,17 +9,27 @@ import {
   Package,
   Phone,
   Plus,
+  Search,
   ShoppingCart,
   TrendingUp,
   Users,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useCart } from '@/contexts/CartContext';
 import { useRealtimeBatch } from '@/hooks/useRealtimeBatch';
 import { supabase } from '@/lib/supabase';
@@ -84,6 +94,12 @@ export default function GroupBuyClient() {
   const { activeBatch, loading } = useRealtimeBatch();
   const [productQuantities, setProductQuantities] = useState<Record<number, number>>({});
   const { dispatch } = useCart();
+
+  // Filter and search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [dosageFilter, setDosageFilter] = useState('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState('all');
 
   // Order code verification state
   const [orderCodeInput, setOrderCodeInput] = useState('');
@@ -311,6 +327,61 @@ export default function GroupBuyClient() {
       const price = bp.product?.price_per_vial || 0;
       return total + (quantity * price);
     }, 0);
+  };
+
+  // Filter products based on search and filters
+  const filteredProducts = activeBatch?.batch_products?.filter((batchProduct) => {
+    const product = batchProduct.product;
+    if (!product) {
+      return false;
+    }
+
+    // Search filter
+    const matchesSearch = searchQuery === ''
+      || product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      || product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      || product.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Category filter
+    const matchesCategory = categoryFilter === 'all'
+      || product.category === categoryFilter;
+
+    // Dosage filter
+    const productDosage = product.specifications?.concentration || product.specifications?.dosage || '';
+    const matchesDosage = dosageFilter === 'all'
+      || productDosage.toLowerCase().includes(dosageFilter.toLowerCase());
+
+    // Availability filter
+    const remaining = Math.max(0, (batchProduct.target_vials || 0) - (batchProduct.current_vials || 0));
+    const matchesAvailability = availabilityFilter === 'all'
+      || (availabilityFilter === 'available' && remaining > 0)
+      || (availabilityFilter === 'sold_out' && remaining === 0)
+      || (availabilityFilter === 'low_stock' && remaining > 0 && remaining <= 2);
+
+    return matchesSearch && matchesCategory && matchesDosage && matchesAvailability;
+  }) || [];
+
+  // Get unique categories and dosages for filters
+  const availableCategories = Array.from(new Set(
+    activeBatch?.batch_products?.map(bp => bp.product?.category).filter(Boolean) || [],
+  )).sort();
+
+  const availableDosages = Array.from(new Set(
+    activeBatch?.batch_products?.map((bp) => {
+      const dosage = bp.product?.specifications?.concentration || bp.product?.specifications?.dosage;
+      return dosage ? `${dosage.replace(/\D/g, '')}mg` : null;
+    }).filter(Boolean) || [],
+  )).sort((a, b) => {
+    const numA = Number.parseInt(a.replace('mg', ''));
+    const numB = Number.parseInt(b.replace('mg', ''));
+    return numA - numB;
+  });
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter('all');
+    setDosageFilter('all');
+    setAvailabilityFilter('all');
   };
 
   if (loading) {
@@ -702,8 +773,139 @@ export default function GroupBuyClient() {
                     <p className="text-lg text-gray-600">Choose from our premium peptide selection</p>
                   </div>
 
+                  {/* Filters Section */}
+                  <div className="mb-8 rounded-2xl border border-purple-200 bg-white/80 p-6 shadow-lg backdrop-blur-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">Filter Products</h3>
+                      {(searchQuery || categoryFilter !== 'all' || dosageFilter !== 'all' || availabilityFilter !== 'all') && (
+                        <Button
+                          onClick={clearFilters}
+                          variant="outline"
+                          size="sm"
+                          className="text-purple-600 hover:bg-purple-50"
+                        >
+                          <X className="mr-1 h-3 w-3" />
+                          Clear Filters
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      {/* Search Bar */}
+                      <div className="relative">
+                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Input
+                          placeholder="Search products..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Category Filter */}
+                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {availableCategories.map(category => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Dosage Filter */}
+                      <Select value={dosageFilter} onValueChange={setDosageFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Dosages" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Dosages</SelectItem>
+                          {availableDosages.map(dosage => (
+                            <SelectItem key={dosage} value={dosage}>
+                              {dosage}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Availability Filter */}
+                      <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Availability</SelectItem>
+                          <SelectItem value="available">Available</SelectItem>
+                          <SelectItem value="low_stock">Low Stock</SelectItem>
+                          <SelectItem value="sold_out">Sold Out</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Active Filters Display */}
+                    {(searchQuery || categoryFilter !== 'all' || dosageFilter !== 'all' || availabilityFilter !== 'all') && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="text-sm text-gray-600">Active filters:</span>
+                        {searchQuery && (
+                          <Badge variant="secondary" className="text-xs">
+                            Search: "
+                            {searchQuery}
+                            "
+                          </Badge>
+                        )}
+                        {categoryFilter !== 'all' && (
+                          <Badge variant="secondary" className="text-xs">
+                            Category:
+                            {' '}
+                            {categoryFilter}
+                          </Badge>
+                        )}
+                        {dosageFilter !== 'all' && (
+                          <Badge variant="secondary" className="text-xs">
+                            Dosage:
+                            {' '}
+                            {dosageFilter}
+                          </Badge>
+                        )}
+                        {availabilityFilter !== 'all' && (
+                          <Badge variant="secondary" className="text-xs">
+                            Availability:
+                            {' '}
+                            {availabilityFilter.replace('_', ' ')}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Results Count */}
+                    <div className="mt-4 text-sm text-gray-600">
+                      Showing
+                      {' '}
+                      {filteredProducts.length}
+                      {' '}
+                      of
+                      {' '}
+                      {activeBatch.batch_products?.length || 0}
+                      {' '}
+                      products
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {activeBatch.batch_products.map((batchProduct) => {
+                    {filteredProducts.map((batchProduct) => {
                       const product = batchProduct.product;
                       const remaining = getRemainingVials(batchProduct.current_vials, batchProduct.target_vials, batchProduct.product_id);
                       const productProgress = getProductProgressPercentage(batchProduct.current_vials, batchProduct.target_vials, batchProduct.product_id);
@@ -781,8 +983,15 @@ export default function GroupBuyClient() {
                                 <h3 className="mb-3 line-clamp-2 text-xl leading-tight font-bold text-gray-900">
                                   {product?.name || 'Unknown Product'}
                                 </h3>
-                                <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
-                                  {product?.category || 'Unknown Category'}
+                                <div className="mb-2 flex flex-wrap gap-2">
+                                  <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
+                                    {product?.category || 'Unknown Category'}
+                                  </div>
+                                  {product?.specifications && (
+                                    <div className="inline-flex items-center rounded-full bg-blue-100/80 px-3 py-1 text-xs font-medium text-blue-700 backdrop-blur-sm">
+                                      {product.specifications.concentration || product.specifications.dosage || 'Dosage N/A'}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -891,6 +1100,26 @@ export default function GroupBuyClient() {
                       );
                     })}
                   </div>
+
+                  {/* No Products Found Message */}
+                  {filteredProducts.length === 0 && activeBatch.batch_products && activeBatch.batch_products.length > 0 && (
+                    <div className="py-16 text-center">
+                      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-purple-200">
+                        <Search className="h-12 w-12 text-purple-600" />
+                      </div>
+                      <h3 className="mb-3 text-2xl font-bold text-gray-900">No products found</h3>
+                      <p className="mx-auto mb-8 max-w-md text-gray-600">
+                        No products match your current search or filter criteria. Try adjusting your search terms or filters.
+                      </p>
+                      <Button
+                        onClick={clearFilters}
+                        variant="outline"
+                        className="border-purple-300 text-purple-600 hover:bg-purple-50"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Cart Summary */}
                   {totalItems > 0 && (

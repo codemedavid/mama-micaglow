@@ -317,7 +317,14 @@ export default function ActiveBatchSection() {
                                 <div className="flex items-center space-x-3">
                                   <div>
                                     <h3 className="text-lg font-semibold">{product.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      <p className="text-sm text-muted-foreground">{product.category}</p>
+                                      {product.specifications && (
+                                        <p className="text-sm font-medium text-blue-600">
+                                          {product.specifications.concentration || product.specifications.dosage || 'Dosage N/A'}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                                 <Badge className={status.color}>{status.text}</Badge>

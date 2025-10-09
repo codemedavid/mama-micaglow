@@ -740,8 +740,15 @@ export default function GroupBuyBatchPage({ params }: { params: Promise<{ batchI
                       <CardTitle className="mb-3 line-clamp-2 text-xl leading-tight font-bold text-gray-900">
                         {batchProduct.product.name}
                       </CardTitle>
-                      <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
-                        {batchProduct.product.category}
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        <div className="inline-flex items-center rounded-full bg-purple-100/80 px-3 py-1 text-xs font-medium text-purple-700 backdrop-blur-sm">
+                          {batchProduct.product.category}
+                        </div>
+                        {batchProduct.product.specifications && (
+                          <div className="inline-flex items-center rounded-full bg-blue-100/80 px-3 py-1 text-xs font-medium text-blue-700 backdrop-blur-sm">
+                            {batchProduct.product.specifications.concentration || batchProduct.product.specifications.dosage || 'Dosage N/A'}
+                          </div>
+                        )}
                       </div>
                     </div>
 
