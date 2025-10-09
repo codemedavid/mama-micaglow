@@ -266,12 +266,21 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onCloseAc
 
           // Update individual product progress
           for (const item of itemsForCheckout) {
-            await supabase
-              .rpc('increment_group_buy_product_vials', {
-                p_batch_id: batchId,
-                p_product_id: item.productId,
-                p_delta: item.quantity,
-              });
+            // Get current vials and update
+            const { data: currentProduct, error: fetchError } = await supabase
+              .from('group_buy_products')
+              .select('current_vials')
+              .eq('batch_id', batchId)
+              .eq('product_id', item.productId)
+              .single();
+
+            if (!fetchError && currentProduct) {
+              await supabase
+                .from('group_buy_products')
+                .update({ current_vials: (currentProduct.current_vials || 0) + item.quantity })
+                .eq('batch_id', batchId)
+                .eq('product_id', item.productId);
+            }
           }
         }
       } else {
@@ -349,14 +358,23 @@ export default function GroupBuyCheckout({ batchId, batchName, isOpen, onCloseAc
             .eq('id', batchId);
         }
 
-        // Update individual product progress in group_buy_products via RPC
+        // Update individual product progress in group_buy_products
         for (const item of itemsForCheckout) {
-          await supabase
-            .rpc('increment_group_buy_product_vials', {
-              p_batch_id: batchId,
-              p_product_id: item.productId,
-              p_delta: item.quantity,
-            });
+          // Get current vials and update
+          const { data: currentProduct, error: fetchError } = await supabase
+            .from('group_buy_products')
+            .select('current_vials')
+            .eq('batch_id', batchId)
+            .eq('product_id', item.productId)
+            .single();
+
+          if (!fetchError && currentProduct) {
+            await supabase
+              .from('group_buy_products')
+              .update({ current_vials: (currentProduct.current_vials || 0) + item.quantity })
+              .eq('batch_id', batchId)
+              .eq('product_id', item.productId);
+          }
         }
       }
 

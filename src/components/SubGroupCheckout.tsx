@@ -212,15 +212,24 @@ export default function SubGroupCheckout({
 
       // Update individual product progress in sub_group_batch_products
       for (const item of itemsForCheckout) {
-        const { error: productUpdateError } = await supabase
-          .rpc('increment_subgroup_batch_product_vials', {
-            p_batch_id: batchId,
-            p_product_id: item.productId,
-            p_delta: item.quantity,
-          });
+        // Get current vials and update
+        const { data: currentProduct, error: fetchError } = await supabase
+          .from('sub_group_batch_products')
+          .select('current_vials')
+          .eq('batch_id', batchId)
+          .eq('product_id', item.productId)
+          .single();
 
-        if (productUpdateError) {
-          // Don't throw here, order is already created
+        if (!fetchError && currentProduct) {
+          const { error: productUpdateError } = await supabase
+            .from('sub_group_batch_products')
+            .update({ current_vials: (currentProduct.current_vials || 0) + item.quantity })
+            .eq('batch_id', batchId)
+            .eq('product_id', item.productId);
+
+          if (productUpdateError) {
+            // Don't throw here, order is already created
+          }
         }
       }
 
